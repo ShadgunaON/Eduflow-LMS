@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -14,7 +14,7 @@ model User {
   emailVerified         DateTime?
   image                 String?
   password              String?
-  role                  UserRole               @default(STUDENT)
+  role                  String                 @default("STUDENT")
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   accounts              Account[]
@@ -160,9 +160,3 @@ model QuizAttempt {
   @@unique([quizId, userId])
 }
 
-enum UserRole {
-  ADMIN
-  INSTRUCTOR
-  STUDENT
-  TUTOR
-}

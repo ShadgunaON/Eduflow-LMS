@@ -35,6 +35,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { email, password } = parsedCredentials.data;
         console.log("LOGIN ATTEMPT", email);
         
+
         try {
           // Attempt AWS Cognito authentication
           const authResult = await cognitoSignIn(email, password);

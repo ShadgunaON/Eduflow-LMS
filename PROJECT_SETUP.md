@@ -23,10 +23,6 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 # Email Notifications (Resend)
 RESEND_API_KEY="<YOUR_RESEND_API_KEY>"
 
-# Cloudinary Storage (Avatars & Image Uploads)
-CLOUDINARY_CLOUD_NAME="<YOUR_CLOUDINARY_NAME>"
-CLOUDINARY_API_KEY="<YOUR_CLOUDINARY_KEY>"
-CLOUDINARY_API_SECRET="<YOUR_CLOUDINARY_SECRET>"
 ```
 
 ## Third-Party Services Setup
@@ -35,9 +31,6 @@ CLOUDINARY_API_SECRET="<YOUR_CLOUDINARY_SECRET>"
 This project uses a PostgreSQL database. You can host this locally via Docker, natively, or through a managed provider like Supabase or Neon.
 Ensure you update the `DATABASE_URL` with your connection string.
 
-### 2. Cloudinary (File Storage)
-Cloudinary handles all profile pictures and image uploads. 
-Create a free account at [Cloudinary.com](https://cloudinary.com), find your dashboard, and copy your Cloud Name, API Key, and API Secret into the `.env` file.
 
 ### 3. Resend (Email Provider)
 Resend is used for sending registration verification and notification emails.
