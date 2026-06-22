@@ -3,7 +3,6 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { prisma } from "./app/lib/prisma";
 import bcrypt from "bcryptjs";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { cognitoSignIn } from "./lib/aws/cognito";
 import { authConfig } from "./auth.config";
 import { CredentialsSignin } from "next-auth";
@@ -14,7 +13,6 @@ class UnverifiedEmailError extends CredentialsSignin {
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   providers: [
     Credentials({
@@ -48,16 +46,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         } catch (error: any) {
           console.log("COGNITO AUTH FAILED:", error.name || error.message);
-          
-          // Fallback to local database authentication during migration
-          const user = await prisma.user.findUnique({ where: { email } });
-          if (user && user.password) {
-            const passwordsMatch = await bcrypt.compare(password, user.password);
-            if (passwordsMatch) {
-              console.log("FALLBACK LOCAL AUTH SUCCESS");
-              return user;
-            }
-          }
+          return null;
         }
         
         return null;

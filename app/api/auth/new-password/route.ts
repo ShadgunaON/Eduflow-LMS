@@ -11,8 +11,9 @@ import { prisma } from "../../../lib/prisma";
 import { cognitoConfirmForgotPassword } from "../../../../lib/aws/cognito";
 
 const newPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Minimum 6 characters required"),
-  token: z.string().min(1, "Missing token"),
+  token: z.string().min(1, "Missing confirmation code"),
 });
 
 export async function POST(req: Request) {
@@ -27,48 +28,19 @@ export async function POST(req: Request) {
       );
     }
 
-    const { password, token } = validated.data;
-
-    const existingToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-    });
-
-    if (!existingToken) {
-      return NextResponse.json({ error: "Invalid token!" }, { status: 400 });
-    }
-
-    const hasExpired = new Date(existingToken.expires) < new Date();
-    if (hasExpired) {
-      return NextResponse.json({ error: "Token has expired!" }, { status: 400 });
-    }
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email: existingToken.email },
-    });
-
-    if (!existingUser) {
-      return NextResponse.json({ error: "Email does not exist!" }, { status: 400 });
-    }
+    const { email, password, token } = validated.data;
 
     // Attempt AWS Cognito Confirm Forgot Password
     try {
-      await cognitoConfirmForgotPassword(existingToken.email, token, password);
+      await cognitoConfirmForgotPassword(email, token, password);
       console.log("AWS Cognito password confirmed successfully");
     } catch (cognitoError: any) {
       console.error("[COGNITO_NEW_PASSWORD_ERROR]", cognitoError.name || cognitoError.message);
+      return NextResponse.json(
+        { error: "Failed to confirm password: " + (cognitoError.message || "Invalid code") },
+        { status: 400 }
+      );
     }
-
-    // Hash new password and update user in local DB
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.user.update({
-      where: { id: existingUser.id },
-      data: { password: hashedPassword },
-    });
-
-    // Clean up the token
-    await prisma.passwordResetToken.delete({
-      where: { id: existingToken.id },
-    });
 
     return NextResponse.json({ success: "Password updated successfully!" });
   } catch (error) {

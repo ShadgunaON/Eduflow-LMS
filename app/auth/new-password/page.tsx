@@ -8,14 +8,16 @@ import { Suspense } from "react";
 import { motion } from "framer-motion";
 
 function NewPasswordForm() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [tokenInput, setTokenInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const urlToken = searchParams.get("token");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,8 +25,10 @@ function NewPasswordForm() {
     setError(null);
     setSuccess(null);
 
-    if (!token) {
-      setError("Missing reset token.");
+    const finalToken = urlToken || tokenInput;
+
+    if (!finalToken || !email) {
+      setError("Email and confirmation code are required.");
       return;
     }
 
@@ -44,7 +48,7 @@ function NewPasswordForm() {
       const res = await fetch("/api/auth/new-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, token }),
+        body: JSON.stringify({ email, password, token: finalToken }),
       });
 
       const data = await res.json();
@@ -104,6 +108,38 @@ function NewPasswordForm() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                    placeholder="you@example.com"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {!urlToken && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Confirmation Code</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+                      placeholder="6-digit code"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">New Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -141,7 +177,7 @@ function NewPasswordForm() {
 
               <button
                 type="submit"
-                disabled={isLoading || !token}
+                disabled={isLoading}
                 className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 {isLoading ? (

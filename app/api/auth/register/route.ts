@@ -7,9 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 import { prisma } from "../../../lib/prisma";
-import { dbAdapter } from "../../../../lib/db-adapter";
 import { generateVerificationToken } from "../../../../lib/tokens";
 import { sendVerificationEmail } from "../../../../lib/mail";
 import { cognitoSignUp } from "../../../../lib/aws/cognito";
@@ -43,26 +41,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Attempt to register in AWS Cognito first
+    // Register in AWS Cognito
     try {
       await cognitoSignUp(email, password, name, "STUDENT");
       console.log("Successfully registered in AWS Cognito");
     } catch (cognitoError: any) {
       console.error("[COGNITO_REGISTER_ERROR]", cognitoError.name || cognitoError.message);
-      // Decide whether to fail the whole registration or continue dual-write
-      // Continuing for now to ensure local DB state is maintained
+      return NextResponse.json(
+        { error: "Failed to register user in Cognito: " + (cognitoError.message || "Unknown error") },
+        { status: 500 }
+      );
     }
-
-    // Hash password and create user using dual-write dbAdapter
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await dbAdapter.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: "STUDENT",
-      },
-    });
 
     // Generate verification token and send email
     const verificationToken = await generateVerificationToken(email);

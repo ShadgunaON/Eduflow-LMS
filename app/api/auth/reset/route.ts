@@ -7,8 +7,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "../../../lib/prisma";
-import { generatePasswordResetToken } from "../../../../lib/tokens";
-import { sendPasswordResetEmail } from "../../../../lib/mail";
+
 import { cognitoForgotPassword } from "../../../../lib/aws/cognito";
 
 const resetSchema = z.object({
@@ -45,18 +44,8 @@ export async function POST(req: Request) {
       console.log("Triggered AWS Cognito forgot password");
     } catch (cognitoError: any) {
       console.error("[COGNITO_RESET_ERROR]", cognitoError.name || cognitoError.message);
-    }
-
-    // Generate token and send email
-    const passwordResetToken = await generatePasswordResetToken(email);
-    const emailResult = await sendPasswordResetEmail(
-      passwordResetToken.email,
-      passwordResetToken.token
-    );
-
-    if (!emailResult.success) {
       return NextResponse.json(
-        { error: "Failed to send reset email. " + ((emailResult as any).error?.message || "Please contact support.") },
+        { error: "Failed to initiate password reset: " + (cognitoError.message || "Unknown error") },
         { status: 500 }
       );
     }
