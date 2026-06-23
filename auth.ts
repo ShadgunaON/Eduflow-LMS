@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
-import { prisma } from "./app/lib/prisma";
-import bcrypt from "bcryptjs";
+import { getItem } from "./lib/aws/dynamo";
 import { cognitoSignIn } from "./lib/aws/cognito";
 import { authConfig } from "./auth.config";
 import { CredentialsSignin } from "next-auth";
@@ -40,9 +39,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           
           if (authResult?.AccessToken) {
             console.log("COGNITO AUTH SUCCESS");
-            const user = await prisma.user.findUnique({ where: { email } });
-            if (user) return user;
-            return null;
+            const user = await getItem(`USER#${email}`, "PROFILE");
+            if (user) {
+              return { id: email, email: user.email, name: user.name, role: user.role };
+            }
+            // If they are in Cognito but not DynamoDB (legacy user), just return basic info
+            return { id: email, email, role: "STUDENT" };
           }
         } catch (error: any) {
           console.log("COGNITO AUTH FAILED:", error.name || error.message);

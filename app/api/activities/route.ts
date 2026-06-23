@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
+import { putItem, queryItems } from "../../../lib/aws/dynamo";
 import { auth } from "../../../auth";
 import { z } from "zod";
 
@@ -18,17 +18,22 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const activities = await prisma.activity.findMany({
-      orderBy: { timestamp: "desc" },
-      take: 100, // Reasonable limit
+    const activities = await queryItems("ACTIVITY");
+
+    activities.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || a.SK.replace("DATE#", "")).getTime();
+      const dateB = new Date(b.createdAt || b.SK.replace("DATE#", "")).getTime();
+      return dateB - dateA;
     });
 
+    const recentActivities = activities.slice(0, 100);
+
     // Map to match the frontend Activity interface (timestamp as ISO string)
-    const result = activities.map((a) => ({
-      id: a.id,
+    const result = recentActivities.map((a: any) => ({
+      id: a.SK,
       type: a.type,
       message: a.message,
-      timestamp: a.timestamp.toISOString(),
+      timestamp: a.createdAt || a.SK.replace("DATE#", ""),
       icon: a.icon,
     }));
 
@@ -50,21 +55,24 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = activitySchema.parse(body);
 
-    const newActivity = await prisma.activity.create({
-      data: {
-        type: validated.type,
-        message: validated.message,
-        timestamp: validated.timestamp ? new Date(validated.timestamp) : new Date(),
-        icon: validated.icon || "🔔",
-      },
-    });
+    const timestamp = validated.timestamp ? new Date(validated.timestamp).toISOString() : new Date().toISOString();
+    const newActivity = {
+      PK: "ACTIVITY",
+      SK: `DATE#${timestamp}`,
+      type: validated.type,
+      message: validated.message,
+      createdAt: timestamp,
+      icon: validated.icon || "🔔",
+    };
+
+    await putItem(newActivity);
 
     return NextResponse.json(
       {
-        id: newActivity.id,
+        id: newActivity.SK,
         type: newActivity.type,
         message: newActivity.message,
-        timestamp: newActivity.timestamp.toISOString(),
+        timestamp: newActivity.createdAt,
         icon: newActivity.icon,
       },
       { status: 201 }

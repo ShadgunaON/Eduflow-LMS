@@ -6,7 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "../../../lib/prisma";
+import { getItem } from "../../../../lib/aws/dynamo";
 
 import { cognitoForgotPassword } from "../../../../lib/aws/cognito";
 
@@ -29,9 +29,7 @@ export async function POST(req: Request) {
     const { email } = validated.data;
 
     // Check if the user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await getItem(`USER#${email}`, "PROFILE");
 
     if (!existingUser) {
       // Return success even if user doesn't exist for security reasons (prevent enumeration)

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
+import { getItem, putItem, queryItems, scanByPKPrefix, scanItems } from "../../../lib/aws/dynamo";
+import { v4 as uuidv4 } from "uuid";
 import { auth } from "../../../auth";
-import { quizSchema } from "../../lib/schemas";
+import { quizSchema } from "../../../app/lib/schemas";
 
 export async function GET(req: Request) {
   try {
@@ -10,93 +11,78 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { user } = session;
-    const isStudent = (user as any).role?.toUpperCase() === "STUDENT";
+    const userEmail = session.user.email!;
+    const isStudent = (session.user as any).role?.toUpperCase() === "STUDENT";
 
     if (isStudent) {
-      // Find courses student is enrolled in
-      const enrollments = await prisma.enrollment.findMany({
-        where: { userId: user.id },
-        select: { courseId: true },
-      });
-      const courseIds = enrollments.map((e) => e.courseId);
+      const enrollments = await queryItems(`USER#${userEmail}`, "ENROLL#");
+      const flattened = [];
 
-      const quizzes = await prisma.quiz.findMany({
-        where: { courseId: { in: courseIds } },
-        include: {
-          course: true,
-          attempts: { where: { userId: user.id } },
-        },
-      });
-
-      const flattened = quizzes.map((q) => {
-        const attempt = q.attempts[0];
-        return {
-          id: q.id,
-          quizId: q.id,
-          title: q.title,
-          course: q.course.name,
-          duration: q.duration,
-          questionsCount: q.questionsCount,
-          questions: q.questions,
-          status: attempt ? attempt.status : "Not Started",
-          score: attempt ? attempt.score : null,
-        };
-      });
-
-      return NextResponse.json(flattened);
-    } else {
-      // Admin / Instructor
-      // Show all quizzes
-      const quizzes = await prisma.quiz.findMany({
-        include: {
-          course: {
-            include: {
-              enrollments: { include: { user: true } },
-            },
-          },
-          attempts: true,
-        },
-      });
-
-      const flattened: any[] = [];
-      for (const q of quizzes) {
-        if (q.course.enrollments.length === 0) {
+      for (const enr of enrollments) {
+        const quizzes = await queryItems(`COURSE#${enr.courseId}`, "QUIZ#");
+        for (const q of quizzes) {
+          const attempt = await getItem(`USER#${userEmail}`, `ATTEMPT#${q.id}`);
           flattened.push({
             id: q.id,
             quizId: q.id,
             title: q.title,
-            course: q.course.name,
-            duration: q.duration,
-            questionsCount: q.questionsCount,
-            questions: q.questions,
-            status: "Not Started",
-            score: null,
-            studentId: null,
-            studentName: "No students enrolled",
-          });
-          continue;
-        }
-
-        for (const enr of q.course.enrollments) {
-          const attempt = q.attempts.find((a) => a.userId === enr.userId);
-          
-          flattened.push({
-            id: `${q.id}_${enr.userId}`,
-            quizId: q.id,
-            title: q.title,
-            course: q.course.name,
+            course: enr.courseName,
             duration: q.duration,
             questionsCount: q.questionsCount,
             questions: q.questions,
             status: attempt ? attempt.status : "Not Started",
             score: attempt ? attempt.score : null,
-            studentId: enr.userId,
-            studentName: enr.user.name || "Unknown Student",
           });
         }
       }
+      return NextResponse.json(flattened);
+    } else {
+      const allCourses = await scanByPKPrefix("COURSE#");
+      const flattened: any[] = [];
 
+      for (const c of allCourses) {
+        const quizzes = await queryItems(c.PK, "QUIZ#");
+        if (quizzes.length === 0) continue;
+
+        const enrollments = await scanItems(`ENROLL#${c.id}`);
+
+        for (const q of quizzes) {
+          if (enrollments.length === 0) {
+            flattened.push({
+              id: q.id,
+              quizId: q.id,
+              title: q.title,
+              course: c.name,
+              duration: q.duration,
+              questionsCount: q.questionsCount,
+              questions: q.questions,
+              status: "Not Started",
+              score: null,
+              studentId: null,
+              studentName: "No students enrolled",
+            });
+            continue;
+          }
+
+          for (const enr of enrollments) {
+            const attempt = await getItem(`USER#${enr.userId}`, `ATTEMPT#${q.id}`);
+            
+            flattened.push({
+              id: `${q.id}_${enr.userId}`,
+              quizId: q.id,
+              title: q.title,
+              course: c.name,
+              duration: q.duration,
+              questionsCount: q.questionsCount,
+              questions: q.questions,
+              status: attempt ? attempt.status : "Not Started",
+              score: attempt ? attempt.score : null,
+              studentId: enr.userId,
+              studentName: enr.studentName || "Unknown Student",
+            });
+          }
+        }
+      }
       return NextResponse.json(flattened);
     }
   } catch (error: any) {
@@ -115,24 +101,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = quizSchema.parse(body);
 
-    const newQuiz = await prisma.$transaction(async (tx) => {
-      const quiz = await tx.quiz.create({
-        data: validated,
-      });
+    const newQuizId = uuidv4();
+    const quiz = {
+      PK: `COURSE#${validated.courseId}`,
+      SK: `QUIZ#${newQuizId}`,
+      id: newQuizId,
+      ...validated,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `New quiz added: ${quiz.title}`,
-          icon: "📝",
-        },
-      });
+    await putItem(quiz);
 
-      return quiz;
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `New quiz added: ${quiz.title}`,
+      icon: "📝",
+      createdAt: new Date().toISOString(),
     });
 
-    return NextResponse.json(newQuiz);
+    return NextResponse.json(quiz);
   } catch (error: any) {
     console.error("POST Quiz Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

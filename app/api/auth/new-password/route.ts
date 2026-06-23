@@ -6,8 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
-import { prisma } from "../../../lib/prisma";
+
 import { cognitoConfirmForgotPassword } from "../../../../lib/aws/cognito";
 
 const newPasswordSchema = z.object({

@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { dbAdapter } from "../../../../lib/db-adapter";
+import { getItem, putItem } from "../../../../lib/aws/dynamo";
 import { auth } from "../../../../auth";
-import { uploadToS3 } from "../../../../lib/aws/s3";
+import { uploadToS3, getPresignedUrl } from "../../../../lib/aws/s3";
 
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    console.log("Upload request received, user:", session?.user?.id);
-    if (!session?.user?.id) {
+    console.log("Upload request received, user:", session?.user?.email);
+    if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -37,33 +36,40 @@ export async function POST(req: Request) {
     const imageUrl = await uploadToS3(buffer, file.name, file.type, "eduflow-profiles");
     console.log("Upload successful, URL:", imageUrl);
 
-    // Update user image in Prisma & DynamoDB (Dual-Write)
-    const updatedUser = await dbAdapter.user.update({
-      where: { id: session.user.id },
-      data: { image: imageUrl },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        image: true,
-      },
-    });
+    // Update user image in DynamoDB
+    const userEmail = session.user.email;
+    const userToUpdate = await getItem(`USER#${userEmail}`, "PROFILE");
+    if (!userToUpdate) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const updatedUser = {
+      ...userToUpdate,
+      image: imageUrl,
+    };
+    await putItem(updatedUser);
 
     // Log activity
-    await prisma.activity.create({
-      data: {
-        type: "student",
-        message: `${updatedUser.name || updatedUser.email} updated their profile picture`,
-        icon: "🖼️",
-      },
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "student",
+      message: `${updatedUser.name || updatedUser.email} updated their profile picture`,
+      icon: "🖼️",
+      createdAt: new Date().toISOString(),
     });
 
-    console.log("Database update successful for user:", updatedUser.id);
-    return NextResponse.json(updatedUser);
+    console.log("Database update successful for user:", updatedUser.email);
+    return NextResponse.json({
+      id: updatedUser.email,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      image: await getPresignedUrl(updatedUser.image),
+    });
   } catch (error: any) {
     console.error("Profile Upload Error:", error);
-    // Cloudinary throws objects that aren't instances of Error
+    // AWS S3 or upload utilities might throw objects that aren't instances of Error
     const message = error.message || (typeof error === "string" ? error : JSON.stringify(error));
     return NextResponse.json({ error: message || "Failed to upload file" }, { status: 500 });
   }

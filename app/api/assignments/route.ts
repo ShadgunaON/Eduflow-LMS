@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
+import { getItem, putItem, queryItems, scanByPKPrefix, scanItems } from "../../../lib/aws/dynamo";
+import { getPresignedUrl } from "../../../lib/aws/s3";
+import { v4 as uuidv4 } from "uuid";
 import { auth } from "../../../auth";
-import { assignmentSchema } from "../../lib/schemas";
+import { assignmentSchema } from "../../../app/lib/schemas";
 
 export async function GET(req: Request) {
   try {
@@ -10,93 +12,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { user } = session;
-    const isStudent = (user as any).role?.toUpperCase() === "STUDENT";
+    const userEmail = session.user.email!;
+    const isStudent = (session.user as any).role?.toUpperCase() === "STUDENT";
 
     if (isStudent) {
       // Find courses student is enrolled in
-      const enrollments = await prisma.enrollment.findMany({
-        where: { userId: user.id },
-        select: { courseId: true },
-      });
-      const courseIds = enrollments.map((e) => e.courseId);
+      const enrollments = await queryItems(`USER#${userEmail}`, "ENROLL#");
+      const flattened = [];
 
-      // Fetch assignments for those courses
-      const assignments = await prisma.assignment.findMany({
-        where: { courseId: { in: courseIds } },
-        include: {
-          course: true,
-          submissions: { where: { userId: user.id } },
-        },
-      });
-
-      const flattened = assignments.map((a) => {
-        const sub = a.submissions[0];
-        let status = "Pending";
-        let score = null;
-        let fileUrl = null;
-        let textResponse = null;
-
-        if (sub) {
-          status = sub.status; // "Submitted" or "Graded"
-          score = sub.score;
-          fileUrl = sub.fileUrl;
-          textResponse = sub.textResponse;
-        } else if (new Date(a.dueDate) < new Date()) {
-          status = "Overdue";
-        }
-
-        return {
-          id: a.id, // Primary key for frontend rendering
-          assignmentId: a.id,
-          title: a.title,
-          course: a.course.name,
-          dueDate: a.dueDate.toISOString(),
-          status,
-          score,
-          fileUrl,
-          textResponse,
-        };
-      });
-
-      return NextResponse.json(flattened);
-    } else {
-      // Admin / Instructor
-      // Need to see every student's status for every assignment
-      const assignments = await prisma.assignment.findMany({
-        include: {
-          course: {
-            include: {
-              enrollments: { include: { user: true } },
-            },
-          },
-          submissions: true,
-        },
-      });
-
-      const flattened: any[] = [];
-      for (const a of assignments) {
-        if (a.course.enrollments.length === 0) {
-          // No students enrolled, but still show the assignment to admin
-          flattened.push({
-            id: a.id,
-            assignmentId: a.id,
-            title: a.title,
-            course: a.course.name,
-            dueDate: a.dueDate.toISOString(),
-            status: "Pending",
-            score: null,
-            fileUrl: null,
-            textResponse: null,
-            studentId: null,
-            studentName: "No students enrolled",
-          });
-          continue;
-        }
-
-        // Only show assignments for enrolled students
-        for (const enr of a.course.enrollments) {
-          const sub = a.submissions.find((s) => s.userId === enr.userId);
+      for (const enr of enrollments) {
+        const assignments = await queryItems(`COURSE#${enr.courseId}`, "ASSIGN#");
+        for (const a of assignments) {
+          const sub = await getItem(`USER#${userEmail}`, `SUB#${a.id}`);
           let status = "Pending";
           let score = null;
           let fileUrl = null;
@@ -105,25 +32,85 @@ export async function GET(req: Request) {
           if (sub) {
             status = sub.status;
             score = sub.score;
-            fileUrl = sub.fileUrl;
+            fileUrl = sub.fileUrl ? await getPresignedUrl(sub.fileUrl) : null;
             textResponse = sub.textResponse;
           } else if (new Date(a.dueDate) < new Date()) {
             status = "Overdue";
           }
 
           flattened.push({
-            id: `${a.id}_${enr.userId}`, // Composite ID
+            id: a.id,
             assignmentId: a.id,
             title: a.title,
-            course: a.course.name,
-            dueDate: a.dueDate.toISOString(),
+            course: enr.courseName,
+            dueDate: a.dueDate,
             status,
             score,
             fileUrl,
             textResponse,
-            studentId: enr.userId,
-            studentName: enr.user.name || "Unknown Student",
           });
+        }
+      }
+      return NextResponse.json(flattened);
+    } else {
+      // Admin / Instructor
+      const allCourses = await scanByPKPrefix("COURSE#");
+      const flattened: any[] = [];
+
+      for (const c of allCourses) {
+        const assignments = await queryItems(c.PK, "ASSIGN#");
+        if (assignments.length === 0) continue;
+
+        const enrollments = await scanItems(`ENROLL#${c.id}`);
+
+        for (const a of assignments) {
+          if (enrollments.length === 0) {
+            flattened.push({
+              id: a.id,
+              assignmentId: a.id,
+              title: a.title,
+              course: c.name,
+              dueDate: a.dueDate,
+              status: "Pending",
+              score: null,
+              fileUrl: null,
+              textResponse: null,
+              studentId: null,
+              studentName: "No students enrolled",
+            });
+            continue;
+          }
+
+          for (const enr of enrollments) {
+            const sub = await getItem(`USER#${enr.userId}`, `SUB#${a.id}`);
+            let status = "Pending";
+            let score = null;
+            let fileUrl = null;
+            let textResponse = null;
+
+            if (sub) {
+              status = sub.status;
+              score = sub.score;
+              fileUrl = sub.fileUrl ? await getPresignedUrl(sub.fileUrl) : null;
+              textResponse = sub.textResponse;
+            } else if (new Date(a.dueDate) < new Date()) {
+              status = "Overdue";
+            }
+
+            flattened.push({
+              id: `${a.id}_${enr.userId}`,
+              assignmentId: a.id,
+              title: a.title,
+              course: c.name,
+              dueDate: a.dueDate,
+              status,
+              score,
+              fileUrl,
+              textResponse,
+              studentId: enr.userId,
+              studentName: enr.studentName || "Unknown Student",
+            });
+          }
         }
       }
 
@@ -145,27 +132,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = assignmentSchema.parse(body);
 
-    const newAssignment = await prisma.$transaction(async (tx) => {
-      const assignment = await tx.assignment.create({
-        data: {
-          title: validated.title,
-          courseId: validated.courseId,
-          dueDate: new Date(validated.dueDate),
-        },
-      });
+    const newAssignmentId = uuidv4();
+    const assignment = {
+      PK: `COURSE#${validated.courseId}`,
+      SK: `ASSIGN#${newAssignmentId}`,
+      id: newAssignmentId,
+      title: validated.title,
+      courseId: validated.courseId,
+      dueDate: new Date(validated.dueDate).toISOString(),
+    };
 
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `New assignment added: ${assignment.title}`,
-          icon: "📝",
-        },
-      });
+    await putItem(assignment);
 
-      return assignment;
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `New assignment added: ${assignment.title}`,
+      icon: "📝",
+      createdAt: new Date().toISOString(),
     });
 
-    return NextResponse.json(newAssignment);
+    return NextResponse.json(assignment);
   } catch (error: any) {
     console.error("POST Assignment Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

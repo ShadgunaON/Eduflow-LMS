@@ -7,9 +7,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "../../../lib/prisma";
-import { generateVerificationToken } from "../../../../lib/tokens";
-import { sendVerificationEmail } from "../../../../lib/mail";
+import { putItem, getItem } from "../../../../lib/aws/dynamo";
 import { cognitoSignUp } from "../../../../lib/aws/cognito";
 
 const registerSchema = z.object({
@@ -33,7 +31,7 @@ export async function POST(req: Request) {
     const { name, email, password } = validated.data;
 
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await getItem(`USER#${email}`, "PROFILE");
     if (existingUser) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
@@ -53,19 +51,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate verification token and send email
-    const verificationToken = await generateVerificationToken(email);
-    const emailResult = await sendVerificationEmail(email, verificationToken.token);
+    // Save user profile to DynamoDB
+    await putItem({
+      PK: `USER#${email}`,
+      SK: "PROFILE",
+      email,
+      name,
+      role: "STUDENT",
+      createdAt: new Date().toISOString(),
+    });
 
-    if (!emailResult.success) {
-      // If email fails, we should ideally rollback user creation, but for now we'll just return the error
-      // so the user knows it failed.
-      return NextResponse.json(
-        { error: "Account created, but failed to send verification email. " + ((emailResult as any).error?.message || "Please contact support.") },
-        { status: 500 }
-      );
-    }
-
+    // In Cognito mock mode, verification is auto-approved. In real mode, Cognito sends the email.
+    // So we don't need to manually send emails here.
+    
     return NextResponse.json(
       { success: "Verification email sent! Please check your inbox." },
       { status: 201 }

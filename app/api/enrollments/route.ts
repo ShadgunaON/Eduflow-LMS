@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
-import { enrollmentSchema } from "../../lib/schemas";
+import { scanItems, scanByPKPrefix, putItem, getItem } from "../../../lib/aws/dynamo";
+import { v4 as uuidv4 } from "uuid";
 import { auth } from "../../../auth";
 import { hasRole, ROUTE_PERMISSIONS } from "../../../lib/rbac";
+import { enrollmentSchema } from "../../lib/schemas";
 
 // GET /api/enrollments — Fetch all enrollments
 export async function GET(req: Request) {
@@ -18,25 +19,25 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
-    const [enrollments, total] = await prisma.$transaction([
-      prisma.enrollment.findMany({
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          user: true,
-          course: true,
-        }
-      }),
-      prisma.enrollment.count()
-    ]);
+    // Fetch from DynamoDB
+    const allEnrollments = await scanItems("ENROLL#");
 
-    const result = enrollments.map((e) => ({
+    // Sort descending
+    const sortedEnrollments = allEnrollments.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+
+    const total = sortedEnrollments.length;
+    const paginatedEnrollments = sortedEnrollments.slice(skip, skip + limit);
+
+    const result = paginatedEnrollments.map((e: any) => ({
       id: e.id,
       userId: e.userId,
       courseId: e.courseId,
-      studentName: e.user.name,
-      courseName: e.course.name,
+      studentName: e.studentName, // Denormalized
+      courseName: e.courseName, // Denormalized
       enrolledDate: e.enrolledDate,
       status: e.status,
     }));
@@ -65,33 +66,40 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = enrollmentSchema.parse(body);
 
-    const user = await prisma.user.findFirst({ where: { name: validated.studentName, role: "STUDENT" } });
-    const course = await prisma.course.findFirst({ where: { name: validated.courseName } });
+    const allUsers = await scanByPKPrefix("USER#", "PROFILE");
+    const user = allUsers.find((u: any) => u.name === validated.studentName && u.role === "STUDENT");
+
+    const allCourses = await scanByPKPrefix("COURSE#");
+    const course = allCourses.find((c: any) => c.name === validated.courseName);
     
     if (!user) return NextResponse.json({ error: "Student not found" }, { status: 404 });
     if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
 
-    const newEnrollment = await prisma.$transaction(async (tx) => {
-      const enrollment = await tx.enrollment.create({
-        data: {
-          userId: user.id,
-          courseId: course.id,
-          enrolledDate: validated.enrolledDate,
-          status: validated.status,
-        },
-        include: { user: true, course: true }
-      });
+    const newEnrollmentId = uuidv4();
+    const newEnrollment = {
+      PK: `USER#${user.email}`,
+      SK: `ENROLL#${course.id}`,
+      id: newEnrollmentId,
+      userId: user.email,
+      courseId: course.id,
+      studentName: user.name, // Denormalizing
+      courseName: course.name, // Denormalizing
+      enrolledDate: validated.enrolledDate,
+      status: validated.status,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "enrollment",
-          message: `${enrollment.user.name} enrolled in ${enrollment.course.name}`,
-          icon: "📋",
-        },
-      });
+    await putItem(newEnrollment);
 
-      return enrollment;
+    // Log activity
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "enrollment",
+      message: `${user.name} enrolled in ${course.name}`,
+      icon: "📋",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json(
@@ -99,8 +107,8 @@ export async function POST(req: Request) {
         id: newEnrollment.id,
         userId: newEnrollment.userId,
         courseId: newEnrollment.courseId,
-        studentName: newEnrollment.user.name,
-        courseName: newEnrollment.course.name,
+        studentName: newEnrollment.studentName,
+        courseName: newEnrollment.courseName,
         enrolledDate: newEnrollment.enrolledDate,
         status: newEnrollment.status,
       },

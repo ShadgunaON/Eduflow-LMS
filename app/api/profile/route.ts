@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
+import { getItem, putItem } from "../../../lib/aws/dynamo";
+import { getPresignedUrl } from "../../../lib/aws/s3";
 import { auth } from "../../../auth";
-import bcrypt from "bcryptjs";
 import { profileUpdateSchema, changePasswordSchema } from "../../lib/schemas";
 
 export const dynamic = "force-dynamic";
@@ -18,26 +18,18 @@ export const GET = auth(async (req) => {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const whereClause = session.user.id
-      ? { id: session.user.id }
-      : { email: session.user.email! };
-
-    const user = await prisma.user.findUnique({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        image: true,
-      },
-    });
+    const userEmail = session.user.email!;
+    const user = await getItem(`USER#${userEmail}`, "PROFILE");
 
     console.log("Found user:", user ? "YES" : "NO");
 
     if (!user) {
       console.log("User not found in DB for session.user.id:", session.user.id);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.image) {
+      user.image = await getPresignedUrl(user.image);
     }
 
     return NextResponse.json(user);
@@ -60,43 +52,7 @@ export const PUT = auth(async (req) => {
 
     // Check if it's a password update or name update
     if (body.type === "password") {
-      const validated = changePasswordSchema.safeParse(body);
-      if (!validated.success) {
-        return NextResponse.json({ error: validated.error.issues[0].message }, { status: 400 });
-      }
-
-      const { currentPassword, newPassword } = validated.data;
-
-      const user = await prisma.user.findUnique({
-        where: session.user.id ? { id: session.user.id } : { email: session.user.email! },
-      });
-
-      if (!user || !user.password) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
-      }
-
-      const passwordsMatch = await bcrypt.compare(currentPassword, user.password);
-      if (!passwordsMatch) {
-        return NextResponse.json({ error: "Incorrect current password" }, { status: 400 });
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { password: hashedPassword },
-      });
-
-      // Log activity
-      await prisma.activity.create({
-        data: {
-          type: "security",
-          message: `${user.name || user.email} updated their password`,
-          icon: "🔒",
-        },
-      });
-
-      return NextResponse.json({ success: "Password updated successfully!" });
+      return NextResponse.json({ error: "Password changes must be done via Cognito Forgot Password flow." }, { status: 400 });
     } else {
       // Profile details update
       const validated = profileUpdateSchema.safeParse(body);
@@ -105,37 +61,38 @@ export const PUT = auth(async (req) => {
       }
 
       const { name } = validated.data;
+      const userEmail = session.user.email!;
 
-      const userToUpdate = session.user.id
-        ? await prisma.user.findUnique({ where: { id: session.user.id } })
-        : await prisma.user.findUnique({ where: { email: session.user.email! } });
+      const userToUpdate = await getItem(`USER#${userEmail}`, "PROFILE");
 
       if (!userToUpdate) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      const updatedUser = await prisma.user.update({
-        where: { id: userToUpdate.id },
-        data: { name },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          image: true,
-        },
-      });
+      const updatedUser = {
+        ...userToUpdate,
+        name,
+      };
+
+      await putItem(updatedUser);
 
       // Log activity
-      await prisma.activity.create({
-        data: {
-          type: "student",
-          message: `${updatedUser.name} updated their profile information`,
-          icon: "✏️",
-        },
+      await putItem({
+        PK: "ACTIVITY",
+        SK: `DATE#${new Date().toISOString()}`,
+        type: "student",
+        message: `${name} updated their profile information`,
+        icon: "✏️",
+        createdAt: new Date().toISOString(),
       });
 
-      return NextResponse.json(updatedUser);
+      return NextResponse.json({
+        id: updatedUser.email,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        image: updatedUser.image,
+      });
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update profile";

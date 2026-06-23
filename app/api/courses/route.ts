@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
-import { courseSchema } from "../../lib/schemas";
+import { scanByPKPrefix, putItem } from "../../../lib/aws/dynamo";
+import { getPresignedUrl } from "../../../lib/aws/s3";
+import { v4 as uuidv4 } from "uuid";
 import { auth } from "../../../auth";
 import { hasRole } from "../../../lib/rbac";
+import { courseSchema } from "../../lib/schemas";
 
 // GET /api/courses — Fetch all courses with pagination
 export async function GET(req: Request) {
@@ -17,23 +19,27 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
-    const [courses, total] = await prisma.$transaction([
-      prisma.course.findMany({
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.course.count(),
-    ]);
+    // Fetch from DynamoDB
+    const allCourses = await scanByPKPrefix("COURSE#");
+    
+    // Sort descending by createdAt
+    const sortedCourses = allCourses.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
 
-    const result = courses.map((c) => ({
+    const total = sortedCourses.length;
+    const paginatedCourses = sortedCourses.slice(skip, skip + limit);
+
+    const result = await Promise.all(paginatedCourses.map(async (c: any) => ({
       id: c.id,
       name: c.name,
       duration: c.duration,
       fee: c.fee,
       category: c.category,
-      imageUrl: c.imageUrl,
-    }));
+      imageUrl: await getPresignedUrl(c.imageUrl),
+    })));
 
     return NextResponse.json({
       data: result,
@@ -59,21 +65,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = courseSchema.parse(body);
 
-    const newCourse = await prisma.$transaction(async (tx) => {
-      const course = await tx.course.create({
-        data: validated,
-      });
+    const newCourseId = uuidv4();
+    const newCourse = {
+      PK: `COURSE#${newCourseId}`,
+      SK: "METADATA",
+      id: newCourseId,
+      ...validated,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `${course.name} course added to catalog`,
-          icon: "📚",
-        },
-      });
+    await putItem(newCourse);
 
-      return course;
+    // Log activity
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `${newCourse.name} course added to catalog`,
+      icon: "📚",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json(

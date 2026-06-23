@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { getItem, putItem, scanItems, deleteItem } from "../../../../lib/aws/dynamo";
+import { quizSchema } from "../../../../app/lib/schemas";
 import { auth } from "../../../../auth";
-import { quizSchema } from "../../../lib/schemas";
 
 export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
   try {
@@ -11,12 +11,12 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const quiz = await prisma.quiz.findUnique({
-      where: { id: params.id },
-      include: {
-        course: true,
-      },
-    });
+    const items = await scanItems(`QUIZ#${params.id}`);
+    const quiz = items[0];
+    if (quiz) {
+      const course = await getItem(`COURSE#${quiz.courseId}`, "METADATA");
+      quiz.course = course;
+    }
 
     if (!quiz) {
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
@@ -40,21 +40,22 @@ export async function PATCH(req: Request, props: { params: Promise<{ id: string 
     const body = await req.json();
     const validated = quizSchema.partial().parse(body);
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const quiz = await tx.quiz.update({
-        where: { id: params.id },
-        data: validated,
-      });
+    const items = await scanItems(`QUIZ#${params.id}`);
+    const quiz = items[0];
+    if (!quiz) {
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
 
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `Quiz updated: ${quiz.title}`,
-          icon: "📝",
-        },
-      });
+    const updated = { ...quiz, ...validated, updatedAt: new Date().toISOString() };
+    await putItem(updated);
 
-      return quiz;
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `Quiz updated: ${updated.title}`,
+      icon: "📝",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json(updated);
@@ -71,20 +72,28 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.quizAttempt.deleteMany({ where: { quizId: params.id } });
+    const items = await scanItems(`QUIZ#${params.id}`);
+    const quiz = items[0];
+    if (!quiz) {
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
 
-      const quiz = await tx.quiz.delete({
-        where: { id: params.id },
-      });
+    // Delete attempts
+    const attempts = await scanItems(`ATTEMPT#${params.id}`);
+    for (const a of attempts) {
+      await deleteItem(a.PK, a.SK);
+    }
 
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `Quiz removed: ${quiz.title}`,
-          icon: "🗑️",
-        },
-      });
+    // Delete quiz
+    await deleteItem(quiz.PK, quiz.SK);
+
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `Quiz removed: ${quiz.title}`,
+      icon: "🗑️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({ success: true });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { enrollmentSchema } from "../../../lib/schemas";
+import { putItem, deleteItem, scanItems } from "../../../../lib/aws/dynamo";
+import { enrollmentSchema } from "../../../../app/lib/schemas";
 import { auth } from "../../../../auth";
 import { hasRole, ROUTE_PERMISSIONS } from "../../../../lib/rbac";
 
@@ -17,34 +17,32 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json();
     const validated = enrollmentSchema.partial().parse(body);
 
-    const updated = await prisma.$transaction(async (tx) => {
-      // Omit courseName and studentName if they are in the update payload since prisma data doesn't accept them directly
-      const { courseName, studentName, ...dataToUpdate } = validated;
-      
-      const enrollment = await tx.enrollment.update({
-        where: { id },
-        data: dataToUpdate,
-        include: { user: true, course: true },
-      });
+    const enrollments = await scanItems("ENROLL#");
+    const enrollment = enrollments.find((e: any) => e.id === id);
+    
+    if (!enrollment) {
+      return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+    }
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "enrollment",
-          message: `Enrollment for ${enrollment.user.name} updated`,
-          icon: "✏️",
-        },
-      });
+    const { courseName, studentName, ...dataToUpdate } = validated;
+    const updated = { ...enrollment, ...dataToUpdate, updatedAt: new Date().toISOString() };
+    await putItem(updated);
 
-      return enrollment;
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "enrollment",
+      message: `Enrollment for ${updated.studentName} updated`,
+      icon: "✏️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({
       id: updated.id,
       userId: updated.userId,
       courseId: updated.courseId,
-      studentName: updated.user.name,
-      courseName: updated.course.name,
+      studentName: updated.studentName,
+      courseName: updated.courseName,
       enrolledDate: updated.enrolledDate,
       status: updated.status,
     });
@@ -65,20 +63,22 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
-    await prisma.$transaction(async (tx) => {
-      const enrollment = await tx.enrollment.delete({
-        where: { id },
-        include: { user: true },
-      });
+    const enrollments = await scanItems("ENROLL#");
+    const enrollment = enrollments.find((e: any) => e.id === id);
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "enrollment",
-          message: `${enrollment.user.name}'s enrollment removed`,
-          icon: "🗑️",
-        },
-      });
+    if (!enrollment) {
+      return NextResponse.json({ error: "Enrollment not found" }, { status: 404 });
+    }
+
+    await deleteItem(enrollment.PK, enrollment.SK);
+
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "enrollment",
+      message: `${enrollment.studentName}'s enrollment removed`,
+      icon: "🗑️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({ success: true });

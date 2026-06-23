@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { studentSchema } from "../../../lib/schemas";
+import { getItem, putItem, queryItems, deleteItem } from "../../../../lib/aws/dynamo";
+import { studentSchema } from "../../../../app/lib/schemas";
 import { auth } from "../../../../auth";
 import { hasRole, ROUTE_PERMISSIONS } from "../../../../lib/rbac";
 
@@ -19,29 +19,28 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const { course, ...userData } = validated;
     
-    const updated = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.update({
-        where: { id },
-        data: userData,
-        include: {
-          enrollments: { include: { course: true } }
-        }
-      });
+    const user = await getItem(`USER#${id}`, "PROFILE");
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "student",
-          message: `${user.name}'s profile updated`,
-          icon: "✏️",
-        },
-      });
+    const updatedUser = { ...user, ...userData };
+    await putItem(updatedUser);
 
-      return user;
+    const enrollments = await queryItems(`USER#${id}`, "ENROLL#");
+
+    // Log activity
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "student",
+      message: `${updatedUser.name}'s profile updated`,
+      icon: "✏️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({
-      id: updated.id, name: updated.name, email: updated.email, course: updated.enrollments?.[0]?.course?.name || "No Course",
+      id: updatedUser.email, name: updatedUser.name, email: updatedUser.email, course: enrollments[0]?.courseName || "No Course",
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update student";
@@ -60,24 +59,23 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
-    await prisma.$transaction(async (tx) => {
-      // First delete associated enrollments, quiz attempts, assignment submissions
-      await tx.enrollment.deleteMany({ where: { userId: id } });
-      await tx.quizAttempt.deleteMany({ where: { userId: id } });
-      await tx.assignmentSubmission.deleteMany({ where: { userId: id } });
+    const user = await getItem(`USER#${id}`, "PROFILE");
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-      const student = await tx.user.delete({
-        where: { id },
-      });
+    const items = await queryItems(`USER#${id}`);
+    for (const item of items) {
+      await deleteItem(item.PK, item.SK);
+    }
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "student",
-          message: `${student.name} was removed`,
-          icon: "🗑️",
-        },
-      });
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "student",
+      message: `${user.name} was removed`,
+      icon: "🗑️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({ success: true });

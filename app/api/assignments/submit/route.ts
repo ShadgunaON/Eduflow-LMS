@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../../lib/prisma";
+import { getItem, putItem } from "../../../../lib/aws/dynamo";
 import { auth } from "../../../../auth";
-import { uploadToS3 } from "../../../../lib/aws/s3";
+import { uploadToS3, getPresignedUrl } from "../../../../lib/aws/s3";
 
 export async function POST(req: Request) {
   try {
@@ -29,16 +29,16 @@ export async function POST(req: Request) {
 
       if (!isStudent && studentId && score) {
         // Admin grading an existing submission
-        const updated = await prisma.assignmentSubmission.update({
-          where: {
-            assignmentId_userId: { assignmentId, userId: studentId }
-          },
-          data: {
-            status: "Graded",
-            score
-          }
-        });
-        return NextResponse.json(updated);
+        // Since we changed id to email, studentId is likely an email or we need to look it up.
+        // The frontend sends studentId which was the email in our new mapping.
+        const sub = await getItem(`USER#${studentId}`, `SUB#${assignmentId}`);
+        if (!sub) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
+        
+        sub.status = "Graded";
+        sub.score = score;
+        await putItem(sub);
+
+        return NextResponse.json(sub);
       }
 
       if (!isStudent) {
@@ -55,41 +55,31 @@ export async function POST(req: Request) {
         fileUrl = await uploadToS3(buffer, file.name, file.type, "eduflow-assignments");
       }
 
-      const submission = await prisma.$transaction(async (tx) => {
-        const sub = await tx.assignmentSubmission.upsert({
-          where: {
-            assignmentId_userId: {
-              assignmentId,
-              userId
-            }
-          },
-          update: {
-            status: "Submitted",
-            fileUrl: fileUrl || undefined,
-            textResponse: textResponse || undefined,
-            submittedAt: new Date()
-          },
-          create: {
-            assignmentId,
-            userId,
-            status: "Submitted",
-            fileUrl,
-            textResponse
-          }
-        });
+      const sub = await getItem(`USER#${userId}`, `SUB#${assignmentId}`) || {
+        PK: `USER#${userId}`,
+        SK: `SUB#${assignmentId}`,
+        assignmentId,
+        userId,
+      };
 
-        await tx.activity.create({
-          data: {
-            type: "assignment",
-            message: `Assignment submitted`,
-            icon: "✅",
-          },
-        });
+      sub.status = "Submitted";
+      if (fileUrl) sub.fileUrl = fileUrl;
+      if (textResponse) sub.textResponse = textResponse;
+      sub.submittedAt = new Date().toISOString();
 
-        return sub;
+      await putItem(sub);
+
+      await putItem({
+        PK: "ACTIVITY",
+        SK: `DATE#${new Date().toISOString()}`,
+        type: "assignment",
+        message: `Assignment submitted`,
+        icon: "✅",
+        createdAt: new Date().toISOString(),
       });
 
-      return NextResponse.json(submission);
+      const presignedSub = { ...sub, fileUrl: sub.fileUrl ? await getPresignedUrl(sub.fileUrl) : null };
+      return NextResponse.json(presignedSub);
     } else {
       // JSON body (e.g. for grading without file upload)
       const body = await req.json();
@@ -99,29 +89,23 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Students must use multipart form upload." }, { status: 400 });
       }
 
-      const updated = await prisma.$transaction(async (tx) => {
-        const sub = await tx.assignmentSubmission.update({
-          where: {
-            assignmentId_userId: { assignmentId, userId: studentId }
-          },
-          data: {
-            status: "Graded",
-            score
-          }
-        });
+      const sub = await getItem(`USER#${studentId}`, `SUB#${assignmentId}`);
+      if (!sub) return NextResponse.json({ error: "Submission not found" }, { status: 404 });
 
-        await tx.activity.create({
-          data: {
-            type: "assignment",
-            message: `Assignment graded`,
-            icon: "✅",
-          },
-        });
+      sub.status = "Graded";
+      sub.score = score;
+      await putItem(sub);
 
-        return sub;
+      await putItem({
+        PK: "ACTIVITY",
+        SK: `DATE#${new Date().toISOString()}`,
+        type: "assignment",
+        message: `Assignment graded`,
+        icon: "✅",
+        createdAt: new Date().toISOString(),
       });
 
-      return NextResponse.json(updated);
+      return NextResponse.json(sub);
     }
   } catch (error: any) {
     console.error("POST Assignment Submission Error:", error);

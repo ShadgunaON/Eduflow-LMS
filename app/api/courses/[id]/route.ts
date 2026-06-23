@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/prisma";
-import { courseSchema } from "../../../lib/schemas";
+import { getItem, putItem, deleteItem, queryItems } from "../../../../lib/aws/dynamo";
+import { getPresignedUrl } from "../../../../lib/aws/s3";
+import { courseSchema } from "../../../../app/lib/schemas";
 import { auth } from "../../../../auth";
 import { hasRole } from "../../../../lib/rbac";
 
@@ -17,26 +18,31 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json();
     const validated = courseSchema.partial().parse(body);
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const course = await tx.course.update({
-        where: { id },
-        data: validated,
-      });
+    const course = await getItem(`COURSE#${id}`, "METADATA");
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `${course.name} course updated`,
-          icon: "✏️",
-        },
-      });
+    const updated = {
+      ...course,
+      ...validated,
+      updatedAt: new Date().toISOString(),
+    };
 
-      return course;
+    await putItem(updated);
+
+    // Log activity
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `${updated.name} course updated`,
+      icon: "✏️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({
-      id: updated.id, name: updated.name, duration: updated.duration, fee: updated.fee, category: updated.category, imageUrl: updated.imageUrl,
+      id: updated.id, name: updated.name, duration: updated.duration, fee: updated.fee, category: updated.category, imageUrl: await getPresignedUrl(updated.imageUrl),
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to update course";
@@ -55,24 +61,25 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params;
 
-    await prisma.$transaction(async (tx) => {
-      // First, delete related enrollments, assignments, quizzes
-      await tx.enrollment.deleteMany({ where: { courseId: id } });
-      await tx.assignment.deleteMany({ where: { courseId: id } });
-      await tx.quiz.deleteMany({ where: { courseId: id } });
+    const course = await getItem(`COURSE#${id}`, "METADATA");
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+    }
 
-      const course = await tx.course.delete({
-        where: { id },
-      });
+    // Delete all items under COURSE#id (Assignments, Quizzes, Lessons, Metadata)
+    const courseItems = await queryItems(`COURSE#${id}`);
+    for (const item of courseItems) {
+      await deleteItem(item.PK, item.SK);
+    }
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "course",
-          message: `${course.name} course removed`,
-          icon: "🗑️",
-        },
-      });
+    // Log activity
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "course",
+      message: `${course.name} course removed`,
+      icon: "🗑️",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json({ success: true });

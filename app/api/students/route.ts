@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../lib/prisma";
-import { studentSchema } from "../../lib/schemas";
+import { scanByPKPrefix, putItem, queryItems } from "../../../lib/aws/dynamo";
+import { cognitoSignUp } from "../../../lib/aws/cognito";
+import { v4 as uuidv4 } from "uuid";
 import { auth } from "../../../auth";
 import { hasRole, ROUTE_PERMISSIONS } from "../../../lib/rbac";
+import { studentSchema } from "../../lib/schemas";
 
 // GET /api/students — Fetch all students
 export async function GET(req: Request) {
@@ -18,28 +20,32 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const skip = (page - 1) * limit;
 
-    const [students, total] = await prisma.$transaction([
-      prisma.user.findMany({
-        where: { role: "STUDENT" },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-        include: {
-          enrollments: {
-            include: { course: true }
-          }
-        }
-      }),
-      prisma.user.count({ where: { role: "STUDENT" } })
-    ]);
+    // Fetch all users
+    const allUsers = await scanByPKPrefix("USER#", "PROFILE");
+    const students = allUsers.filter((u: any) => u.role === "STUDENT");
 
-    // Map to match the frontend interface shape (strip Prisma metadata)
-    const result = students.map((s) => ({
-      id: s.id,
-      name: s.name,
-      email: s.email,
-      course: s.enrollments[0]?.course?.name || "Not Enrolled",
-    }));
+    // Sort descending
+    students.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
+
+    const total = students.length;
+    const paginatedStudents = students.slice(skip, skip + limit);
+
+    // Map to match the frontend interface shape and fetch their enrollments
+    const result = await Promise.all(
+      paginatedStudents.map(async (s: any) => {
+        const enrollments = await queryItems(`USER#${s.email}`, "ENROLL#");
+        return {
+          id: s.email,
+          name: s.name,
+          email: s.email,
+          course: enrollments.length > 0 ? (enrollments[0] as any).courseName : "Not Enrolled",
+        };
+      })
+    );
 
     return NextResponse.json({
       data: result,
@@ -65,29 +71,33 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validated = studentSchema.parse(body);
 
-    const newUser = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
-        data: {
-          name: validated.name,
-          email: validated.email,
-          role: "STUDENT",
-        },
-      });
+    // Create in Cognito
+    const tempPassword = `Temp@${uuidv4().slice(0, 8)}`;
+    await cognitoSignUp(validated.email, tempPassword, validated.name, "STUDENT");
 
-      // Log activity
-      await tx.activity.create({
-        data: {
-          type: "student",
-          message: `${user.name} registered as a new student`,
-          icon: "🎓",
-        },
-      });
+    // Save user profile to DynamoDB
+    const newUser = {
+      PK: `USER#${validated.email}`,
+      SK: "PROFILE",
+      email: validated.email,
+      name: validated.name,
+      role: "STUDENT",
+      createdAt: new Date().toISOString(),
+    };
+    await putItem(newUser);
 
-      return user;
+    // Log activity
+    await putItem({
+      PK: "ACTIVITY",
+      SK: `DATE#${new Date().toISOString()}`,
+      type: "student",
+      message: `${newUser.name} registered as a new student`,
+      icon: "🎓",
+      createdAt: new Date().toISOString(),
     });
 
     return NextResponse.json(
-      { id: newUser.id, name: newUser.name, email: newUser.email, course: "Not Enrolled" },
+      { id: newUser.email, name: newUser.name, email: newUser.email, course: "Not Enrolled" },
       { status: 201 }
     );
   } catch (error: unknown) {

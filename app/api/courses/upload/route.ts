@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "../../../../auth";
-import { uploadToS3 } from "../../../../lib/aws/s3";
+import { uploadToS3, getPresignedUrl } from "../../../../lib/aws/s3";
 import { hasRole } from "../../../../lib/rbac";
 
 export async function POST(req: Request) {
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     // Upload to AWS S3
     const imageUrl = await uploadToS3(buffer, file.name, file.type, "eduflow-courses");
 
-    return NextResponse.json({ imageUrl }, { status: 200 });
+    return NextResponse.json({ imageUrl: await getPresignedUrl(imageUrl) }, { status: 200 });
   } catch (error: any) {
     console.error("Course Thumbnail Upload Error:", error);
     const message = error.message || (typeof error === "string" ? error : JSON.stringify(error));
