@@ -41,6 +41,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         
         try {
           console.error("[AUTH_TRACE] Phase 1: Calling cognitoSignIn...");
+          console.error("[AUTH_TRACE] Email Raw Value:", `"${email}"`);
+          console.error("[AUTH_TRACE] Email Length:", email.length);
+          console.error("[AUTH_TRACE] Email Trimmed:", `"${email.trim()}"`);
+          console.error("[AUTH_TRACE] Email Strict Match:", email === email.trim());
+          
           const authResult = await cognitoSignIn(email, password);
           
           if (authResult?.AccessToken) {
