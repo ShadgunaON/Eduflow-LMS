@@ -2,6 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 import { ROUTE_PERMISSIONS, hasRole } from "./lib/rbac";
 
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
