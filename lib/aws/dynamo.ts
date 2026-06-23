@@ -6,6 +6,11 @@ const AWS_REGION = process.env.AWS_REGION;
 const DYNAMODB_TABLE_NAME = process.env.DYNAMODB_TABLE_NAME;
 const IS_MOCK_MODE = !AWS_REGION || !DYNAMODB_TABLE_NAME;
 
+console.error("[AUTH_TRACE] AWS_ACCESS_KEY_ID exists:", !!process.env.AWS_ACCESS_KEY_ID);
+console.error("[AUTH_TRACE] AWS_SECRET_ACCESS_KEY exists:", !!process.env.AWS_SECRET_ACCESS_KEY);
+console.error("[AUTH_TRACE] AWS_SESSION_TOKEN exists:", !!process.env.AWS_SESSION_TOKEN);
+console.error("[AUTH_TRACE] process.env.AWS_REGION:", process.env.AWS_REGION);
+
 const client = new DynamoDBClient({ region: AWS_REGION || "us-east-1" });
 export const docClient = DynamoDBDocumentClient.from(client);
 export const TABLE_NAME = DYNAMODB_TABLE_NAME || "EduflowLMS";
