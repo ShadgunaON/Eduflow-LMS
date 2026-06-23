@@ -33,32 +33,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           .safeParse(credentials);
 
         if (!parsedCredentials.success) {
-           console.log("LOGIN ATTEMPT", credentials?.email, "- Zod validation failed");
+           console.error("[AUTH_TRACE] Zod validation failed for email. Returning null.");
            return null;
         }
 
         const { email, password } = parsedCredentials.data;
-        console.log("LOGIN ATTEMPT", email);
         
-
         try {
-          // Attempt AWS Cognito authentication
+          console.error("[AUTH_TRACE] Phase 1: Calling cognitoSignIn...");
           const authResult = await cognitoSignIn(email, password);
           
           if (authResult?.AccessToken) {
-            console.log("COGNITO AUTH SUCCESS");
+            console.error("[AUTH_TRACE] Phase 2: Cognito SUCCESS. Calling DynamoDB getItem...");
             const user = await getItem(`USER#${email}`, "PROFILE");
+            
             if (user) {
               return { id: email, email: user.email, name: user.name, role: user.role };
             }
-            // If they are in Cognito but not DynamoDB (legacy user), just return basic info
             return { id: email, email, role: "STUDENT" };
           }
+          
+          console.error("[AUTH_TRACE] Phase X: Cognito returned empty AccessToken without throwing. Returning null.");
         } catch (error: any) {
-          console.log("COGNITO AUTH CRASH:", error);
+          console.error("[AUTH_TRACE] CRITICAL CRASH CAUGHT:", error.name, error.message, error.stack);
           throw new DebugAuthError(error.name || "UnknownBackendError");
         }
         
+        console.error("[AUTH_TRACE] Fallthrough. Returning null.");
         return null;
       },
     }),
