@@ -6,6 +6,13 @@ import { cognitoSignIn } from "./lib/aws/cognito";
 import { authConfig } from "./auth.config";
 import { CredentialsSignin } from "next-auth";
 
+class DebugAuthError extends CredentialsSignin {
+  constructor(errorName: string) {
+    super();
+    this.code = errorName;
+  }
+}
+
 class UnverifiedEmailError extends CredentialsSignin {
   code = "Email not verified. Please check your inbox for the verification link.";
 }
@@ -48,8 +55,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return { id: email, email, role: "STUDENT" };
           }
         } catch (error: any) {
-          console.log("COGNITO AUTH FAILED:", error.name || error.message);
-          return null;
+          console.log("COGNITO AUTH CRASH:", error);
+          throw new DebugAuthError(error.name || "UnknownBackendError");
         }
         
         return null;
