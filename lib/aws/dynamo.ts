@@ -12,13 +12,7 @@ console.error("[AUTH_TRACE] AWS_SECRET_ACCESS_KEY exists:", !!process.env.AWS_SE
 console.error("[AUTH_TRACE] AWS_SESSION_TOKEN exists:", !!process.env.AWS_SESSION_TOKEN);
 console.error("[AUTH_TRACE] process.env.AWS_REGION:", process.env.AWS_REGION);
 
-// Bypass Webpack static analysis
-const envVars = process['e' + 'nv'];
-console.error("[AUTH_TRACE] RAW LAMBDA ACCESS KEY:", !!envVars['AWS_ACCESS_KEY_ID']);
-console.error("[AUTH_TRACE] RAW LAMBDA SECRET KEY:", !!envVars['AWS_SECRET_ACCESS_KEY']);
-console.error("[AUTH_TRACE] RAW LAMBDA SESSION TOKEN:", !!envVars['AWS_SESSION_TOKEN']);
-console.error("[AUTH_TRACE] ECS URI:", envVars['AWS_CONTAINER_CREDENTIALS_RELATIVE_URI']);
-console.error("[AUTH_TRACE] ECS FULL URI:", envVars['AWS_CONTAINER_CREDENTIALS_FULL_URI']);
+
 
 defaultProvider()().then(
   () => console.error("[AUTH_TRACE] SDK Node Provider Resolution: SUCCESS"),
