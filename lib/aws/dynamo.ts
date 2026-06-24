@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { getMockDb, saveMockDb } from "./mockDb";
 
 const AWS_REGION = process.env.AWS_REGION;
@@ -10,6 +11,15 @@ console.error("[AUTH_TRACE] AWS_ACCESS_KEY_ID exists:", !!process.env.AWS_ACCESS
 console.error("[AUTH_TRACE] AWS_SECRET_ACCESS_KEY exists:", !!process.env.AWS_SECRET_ACCESS_KEY);
 console.error("[AUTH_TRACE] AWS_SESSION_TOKEN exists:", !!process.env.AWS_SESSION_TOKEN);
 console.error("[AUTH_TRACE] process.env.AWS_REGION:", process.env.AWS_REGION);
+
+defaultProvider()().then(
+  () => console.error("[AUTH_TRACE] SDK Node Provider Resolution: SUCCESS"),
+  (err) => {
+    console.error("[AUTH_TRACE] SDK Node Provider Resolution: FAILED");
+    console.error("[AUTH_TRACE] Error Name:", err.name);
+    console.error("[AUTH_TRACE] Error Message:", err.message);
+  }
+);
 
 const client = new DynamoDBClient({ region: AWS_REGION || "us-east-1" });
 export const docClient = DynamoDBDocumentClient.from(client);
