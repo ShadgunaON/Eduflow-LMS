@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  serverExternalPackages: [
+    "@aws-sdk/client-dynamodb",
+    "@aws-sdk/lib-dynamodb",
+    "@aws-sdk/credential-provider-node",
+    "@aws-sdk/client-s3"
+  ],
 };
 
 export default nextConfig;
