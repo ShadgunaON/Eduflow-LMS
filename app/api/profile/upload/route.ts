@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { getItem, putItem } from "../../../../lib/aws/dynamo";
-import { auth } from "../../../../auth";
 import { uploadToS3, getPresignedUrl } from "../../../../lib/aws/s3";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    console.log("Upload request received, user:", session?.user?.email);
-    if (!session?.user?.email) {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const token = authHeader.split(" ")[1];
+    const payloadBase64 = token.split(".")[1];
+    const payload = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf-8"));
+    const userEmail = payload.email;
+
+    console.log("Upload request received, user:", userEmail);
+    if (!userEmail) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -37,7 +44,6 @@ export async function POST(req: Request) {
     console.log("Upload successful, URL:", imageUrl);
 
     // Update user image in DynamoDB
-    const userEmail = session.user.email;
     const userToUpdate = await getItem(`USER#${userEmail}`, "PROFILE");
     if (!userToUpdate) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });

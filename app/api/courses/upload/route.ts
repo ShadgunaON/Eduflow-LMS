@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
-import { auth } from "../../../../auth";
 import { uploadToS3, getPresignedUrl } from "../../../../lib/aws/s3";
 import { hasRole } from "../../../../lib/rbac";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    const role = (session?.user as any)?.role;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const token = authHeader.split(" ")[1];
+    const payloadBase64 = token.split(".")[1];
+    const payload = JSON.parse(Buffer.from(payloadBase64, "base64").toString("utf-8"));
+    const role = payload["custom:role"] || "STUDENT";
 
     // Only Admins and Instructors can upload course images
     if (!hasRole(role, ["ADMIN", "INSTRUCTOR"])) {
