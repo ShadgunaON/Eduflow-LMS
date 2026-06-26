@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 
-type AuthMode = "login" | "register" | "forgot";
+type AuthMode = "login" | "register" | "forgot" | "verify";
 
 export default function PremiumAuthPage() {
   const router = useRouter();
@@ -26,11 +26,13 @@ export default function PremiumAuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   
   // Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
 
   // Password Strength Logic
   const getPasswordStrength = (pass: string) => {
@@ -69,17 +71,27 @@ export default function PremiumAuthPage() {
           password,
           options: {
             userAttributes: {
+              email,
               name,
+              "custom:role": "STUDENT",
             }
           }
         });
+        setMode("verify");
+        setSuccessMsg("Registration successful! Please check your email for the verification code.");
+      } else if (mode === "verify") {
+        const { confirmSignUp } = await import("aws-amplify/auth");
+        await confirmSignUp({
+          username: email,
+          confirmationCode: verificationCode,
+        });
         setMode("login");
-        setError("Registration successful! Please check your email to verify your account before logging in.");
+        setSuccessMsg("Email verified successfully! You can now log in.");
       } else {
         const { resetPassword } = await import("aws-amplify/auth");
         await resetPassword({ username: email });
         setMode("login");
-        setError("Password reset link sent! Check your email.");
+        setSuccessMsg("Password reset link sent! Check your email.");
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
@@ -186,16 +198,18 @@ export default function PremiumAuthPage() {
                   {mode === "login" && "Welcome back"}
                   {mode === "register" && "Create an account"}
                   {mode === "forgot" && "Reset password"}
+                  {mode === "verify" && "Verify Email"}
                 </h2>
                 <p className="text-slate-500">
                   {mode === "login" && "Enter your credentials to access your workspace."}
                   {mode === "register" && "Join thousands of educators and students today."}
                   {mode === "forgot" && "Enter your email and we'll send you a reset link."}
+                  {mode === "verify" && "Enter the 6-digit code sent to your email."}
                 </p>
               </div>
 
               {/* Social Logins */}
-              {mode !== "forgot" && (
+              {(mode !== "forgot" && mode !== "verify") && (
                 <>
                   <div className="grid grid-cols-2 gap-4 mb-8">
                     <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-surface border border-surface-border rounded-xl text-sm font-semibold hover:bg-surface-muted transition-colors shadow-sm">
@@ -236,6 +250,16 @@ export default function PremiumAuthPage() {
                   </motion.div>
                 )}
 
+                {successMsg && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="p-3 bg-emerald-500/20 border border-emerald-500/50 rounded-xl text-sm font-medium text-emerald-600 dark:text-emerald-400"
+                  >
+                    {successMsg}
+                  </motion.div>
+                )}
+
                 {mode === "register" && (
                   <div className="space-y-1">
                     <label className="text-sm font-semibold text-foreground">Full Name</label>
@@ -253,22 +277,24 @@ export default function PremiumAuthPage() {
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-foreground">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-surface-muted border border-surface-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all text-foreground placeholder:text-slate-400"
-                      placeholder="you@example.com"
-                    />
+                {mode !== "verify" && (
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-foreground">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-surface-muted border border-surface-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all text-foreground placeholder:text-slate-400"
+                        placeholder="you@example.com"
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {mode !== "forgot" && (
+                {(mode !== "forgot" && mode !== "verify") && (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-semibold text-foreground">Password</label>
@@ -328,6 +354,24 @@ export default function PremiumAuthPage() {
                   </div>
                 )}
 
+                {mode === "verify" && (
+                  <div className="space-y-1">
+                    <label className="text-sm font-semibold text-foreground">Verification Code</label>
+                    <div className="relative">
+                      <CheckCircle2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input
+                        type="text"
+                        required
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-surface-muted border border-surface-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/20 transition-all text-foreground tracking-[0.5em] text-center font-mono placeholder:text-slate-400 placeholder:tracking-normal"
+                        placeholder="123456"
+                        maxLength={6}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={isLoading || (mode === "register" && strengthScore < 2)}
@@ -340,6 +384,7 @@ export default function PremiumAuthPage() {
                       {mode === "login" && "Sign In"}
                       {mode === "register" && "Create Account"}
                       {mode === "forgot" && "Send Reset Link"}
+                      {mode === "verify" && "Verify Code"}
                       <ArrowRight size={18} />
                     </>
                   )}
