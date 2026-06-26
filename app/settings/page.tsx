@@ -24,12 +24,11 @@ import {
   Mail,
   ShieldAlert
 } from "lucide-react";
-import { signIn } from "next-auth/react";
 
 type Tab = "profile" | "appearance" | "security" | "data";
 
 export default function SettingsPage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, login } = useAuth();
   const { settings, updateSettings, resetSettings } = useSettings();
   const { resetAll } = useApp();
   const { addToast } = useToast();
@@ -213,16 +212,11 @@ export default function SettingsPage() {
   async function handleSwitchUser(email: string) {
     addToast("Switching account...", "info");
     const password = email === "admin@eduflow.com" ? "admin123" : email === "tutor@eduflow.com" ? "tutor123" : "student123";
-    const result = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
-    
-    if (result?.error) {
-      addToast("Failed to switch account: " + result.error, "error");
-    } else {
+    try {
+      await login({ email, password });
       window.location.href = "/settings";
+    } catch (err: any) {
+      addToast("Failed to switch account: " + err.message, "error");
     }
   }
 

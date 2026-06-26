@@ -1,0 +1,231 @@
+type Course {
+  id: ID!
+  name: String!
+  duration: String!
+  fee: String!
+  category: String!
+  imageUrl: String
+  createdAt: AWSDateTime
+  updatedAt: AWSDateTime
+}
+
+type CoursePaginatedResponse {
+  data: [Course]!
+  total: Int!
+  page: Int!
+  totalPages: Int!
+}
+
+input CreateCourseInput {
+  name: String!
+  duration: String!
+  fee: String!
+  category: String!
+  imageUrl: String
+}
+
+# --- Students ---
+type Student {
+  id: ID!
+  name: String!
+  email: String!
+  course: String
+}
+
+type StudentPaginatedResponse {
+  data: [Student]!
+  total: Int!
+  page: Int!
+  totalPages: Int!
+}
+
+input CreateStudentInput {
+  name: String!
+  email: String!
+  course: String
+}
+
+input UpdateStudentInput {
+  id: ID!
+  name: String
+  email: String
+  course: String
+}
+
+# --- Enrollments ---
+type Enrollment {
+  id: ID!
+  userId: String!
+  courseId: String!
+  studentName: String!
+  courseName: String!
+  enrolledDate: AWSDateTime
+  status: String!
+}
+
+type EnrollmentPaginatedResponse {
+  data: [Enrollment]!
+  total: Int!
+  page: Int!
+  totalPages: Int!
+}
+
+input CreateEnrollmentInput {
+  studentName: String!
+  courseName: String!
+  enrolledDate: AWSDateTime
+  status: String!
+}
+
+# --- Activities ---
+type Activity {
+  PK: String!
+  SK: String!
+  type: String!
+  message: String!
+  icon: String!
+  createdAt: AWSDateTime
+}
+
+# --- Assignments ---
+type Assignment {
+  id: ID!
+  assignmentId: ID!
+  title: String!
+  course: String
+  courseId: String
+  dueDate: AWSDateTime!
+  status: String
+  score: String
+  fileUrl: String
+  textResponse: String
+  studentId: String
+  studentName: String
+}
+
+type AssignmentSubmission {
+  assignmentId: String!
+  userId: String!
+  status: String!
+  textResponse: String
+  fileUrl: String
+  score: String
+  submittedAt: AWSDateTime
+}
+
+input CreateAssignmentInput {
+  title: String!
+  courseId: String!
+  dueDate: AWSDateTime!
+}
+
+input SubmitAssignmentInput {
+  assignmentId: String!
+  textResponse: String
+}
+
+input GradeAssignmentInput {
+  assignmentId: String!
+  studentId: String!
+  score: String!
+}
+
+# --- Quizzes ---
+type QuizQuestion {
+  id: ID!
+  question: String!
+  options: [String!]!
+  correctAnswer: Int!
+}
+
+type Quiz {
+  id: ID!
+  quizId: ID!
+  title: String!
+  course: String
+  courseId: String
+  duration: Int!
+  questionsCount: Int!
+  questions: [QuizQuestion]
+  status: String
+  score: Int
+  studentId: String
+  studentName: String
+}
+
+type QuizAttempt {
+  quizId: String!
+  userId: String!
+  score: Int
+  status: String!
+  completedAt: AWSDateTime
+}
+
+input QuizQuestionInput {
+  id: ID!
+  question: String!
+  options: [String!]!
+  correctAnswer: Int!
+}
+
+input CreateQuizInput {
+  title: String!
+  courseId: String!
+  duration: Int!
+  questionsCount: Int!
+  questions: [QuizQuestionInput!]
+}
+
+input SubmitQuizAttemptInput {
+  quizId: String!
+  score: Int
+  status: String
+}
+
+# --- Profile ---
+type Profile {
+  id: ID!
+  name: String!
+  email: String!
+  role: String!
+  image: String
+}
+
+input UpdateProfileInput {
+  name: String!
+}
+
+# --- Root Types ---
+type Query {
+  getCourses(page: Int = 1, limit: Int = 50): CoursePaginatedResponse
+  getStudents(page: Int = 1, limit: Int = 50): StudentPaginatedResponse
+  getEnrollments(page: Int = 1, limit: Int = 50): EnrollmentPaginatedResponse
+  getActivities: [Activity]!
+  getAssignments: [Assignment]!
+  getQuizzes: [Quiz]!
+  getProfile: Profile
+}
+
+type Mutation {
+  createCourse(input: CreateCourseInput!): Course
+  
+  createStudent(input: CreateStudentInput!): Student
+  updateStudent(input: UpdateStudentInput!): Student
+  deleteStudent(id: ID!): Boolean
+  
+  createEnrollment(input: CreateEnrollmentInput!): Enrollment
+  
+  createAssignment(input: CreateAssignmentInput!): Assignment
+  submitAssignment(input: SubmitAssignmentInput!): AssignmentSubmission
+  gradeAssignment(input: GradeAssignmentInput!): AssignmentSubmission
+  
+  createQuiz(input: CreateQuizInput!): Quiz
+  submitQuizAttempt(input: SubmitQuizAttemptInput!): QuizAttempt
+  
+  updateProfile(input: UpdateProfileInput!): Profile
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

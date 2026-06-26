@@ -1,8 +1,22 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { signIn, signOut, getCurrentUser, fetchAuthSession, AuthUser } from "aws-amplify/auth";
+import { Amplify } from "aws-amplify";
+
+// Configure Amplify Auth manually since we deleted NextAuth
+Amplify.configure({
+  Auth: {
+    Cognito: {
+      userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || "us-east-1_hhb2NN8Nw",
+      userPoolClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || "5veprdb5kg4nq3r4cc82qf5u3s",
+      loginWith: {
+        email: true,
+      },
+    },
+  },
+});
 
 interface User {
   name: string;
@@ -22,32 +36,70 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data: session, status, update } = useSession();
-  const loading = status === "loading";
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const rawRole = session?.user ? (session.user as any).role || "student" : "student";
-  const userRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
-
-  const user = session?.user ? {
-    name: session.user.name || "",
-    email: session.user.email || "",
-    role: userRole,
-    image: session.user.image || undefined,
-  } : null;
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const currentUser = await getCurrentUser();
+        const session = await fetchAuthSession();
+        // Since we are decoupling, we will temporarily assign a default role and name.
+        // Once the API Gateway is setup, we can fetch the user's DynamoDB profile here.
+        setUser({
+          email: currentUser.signInDetails?.loginId || "",
+          name: "User", // Will fetch from DB later
+          role: "Student", // Will fetch from DB later
+        });
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkAuth();
+  }, []);
 
   async function login(data: Record<string, unknown>) {
-    // Left for compatibility, but the actual login page uses signIn directly.
-    await signIn("credentials", { ...data, redirect: false });
-    router.push("/dashboard");
+    setLoading(true);
+    try {
+      const { isSignedIn } = await signIn({
+        username: data.email as string,
+        password: data.password as string,
+      });
+      if (isSignedIn) {
+        const currentUser = await getCurrentUser();
+        setUser({
+          email: currentUser.signInDetails?.loginId || data.email as string,
+          name: "User",
+          role: "Student",
+        });
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Login failed", err);
+      throw new Error(err.message || "Failed to login");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function logout() {
-    await signOut({ callbackUrl: "/login" });
+    setLoading(true);
+    try {
+      await signOut();
+      setUser(null);
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout failed", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function updateUser(data: { name?: string; image?: string }) {
-    await update(data);
+    setUser((prev) => (prev ? { ...prev, ...data } : null));
   }
 
   return (

@@ -1,4 +1,5 @@
 import { Student, Course, Enrollment, Activity } from "../data/types";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
@@ -12,7 +13,25 @@ async function fetchApi<T>(url: string, options?: RequestInit): Promise<T> {
      delete headers["Content-Type"];
   }
 
-  const res = await fetch(url, {
+  // Inject Cognito JWT Token
+  try {
+    const session = await fetchAuthSession();
+    const token = session.tokens?.idToken?.toString();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  } catch (e) {
+    console.error("Auth session not available for API call");
+  }
+
+  // Re-wire to API Gateway (except upload routes)
+  const API_GATEWAY_URL = process.env.NEXT_PUBLIC_API_GATEWAY_URL || "https://lsbvzcesa2.execute-api.us-east-1.amazonaws.com/Prod";
+  let finalUrl = url;
+  if (url.startsWith("/api") && !url.includes("/upload")) {
+    finalUrl = url.replace("/api", API_GATEWAY_URL);
+  }
+
+  const res = await fetch(finalUrl, {
     cache: "no-store",
     ...options,
     headers,

@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,6 +52,8 @@ export default function PremiumAuthPage() {
     return "bg-emerald-500";
   };
 
+  const { login } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -59,60 +61,28 @@ export default function PremiumAuthPage() {
 
     try {
       if (mode === "login") {
-        const result = await signIn("credentials", {
-          redirect: false,
-          email,
-          password,
-        });
-
-        if (result?.error) {
-          console.log("[LOGIN_DEBUG] result.error is:", result.error);
-          
-          // If the error contains our custom email verification message, show it.
-          // Otherwise show the generic invalid credentials message.
-          if (result.error.includes("Email not verified") || result.error === "CredentialsSignin") {
-            // Temporary workaround if error is generic CredentialsSignin
-            // Wait, let's just log it for now and set it to the raw error.
-            setError(`Error from NextAuth: ${result.error}`);
-          } else {
-            setError(`Error: ${result.error}`);
-          }
-        } else {
-          router.push("/dashboard");
-          router.refresh();
-        }
+        await login({ email, password });
       } else if (mode === "register") {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
+        const { signUp } = await import("aws-amplify/auth");
+        await signUp({
+          username: email,
+          password,
+          options: {
+            userAttributes: {
+              name,
+            }
+          }
         });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          setError(data.error || "Registration failed");
-        } else {
-          setMode("login");
-          // Use error state as a generic message for now
-          setError(data.success); 
-        }
+        setMode("login");
+        setError("Registration successful! Please check your email to verify your account before logging in.");
       } else {
-        const res = await fetch("/api/auth/reset", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          setError(data.error || "Failed to send reset link");
-        } else {
-          setMode("login");
-          setError(data.success);
-        }
+        const { resetPassword } = await import("aws-amplify/auth");
+        await resetPassword({ username: email });
+        setMode("login");
+        setError("Password reset link sent! Check your email.");
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }

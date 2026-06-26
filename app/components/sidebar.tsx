@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { useAuth } from "../context/AuthContext";
-import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../lib/utils";
 import {
@@ -50,7 +49,7 @@ interface Props {
 export default function Sidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname();
   const { settings } = useSettings();
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -206,7 +205,7 @@ export default function Sidebar({ isOpen, onClose }: Props) {
           </div>
           
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => logout()}
             className={cn(
               "mt-4 flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-rose-400 transition-colors w-full rounded-lg py-2 overflow-hidden flex-shrink-0",
               isCollapsed ? "justify-center px-0 hover:bg-slate-800/50" : "px-3 hover:bg-rose-500/10"

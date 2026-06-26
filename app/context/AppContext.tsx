@@ -12,7 +12,7 @@ import {
 import type { Student, Course, Enrollment, Activity } from "../data/types";
 import { StudentService, CourseService, EnrollmentService, ActivityService, AssignmentService, QuizService } from "../lib/api";
 import { useToast } from "./ToastContext";
-import { useSession } from "next-auth/react";
+import { useAuth } from "./AuthContext";
 
 interface AppContextType {
   students: Student[];
@@ -46,7 +46,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { status } = useSession();
+  const { user, loading } = useAuth();
   const [hydrated, setHydrated] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -57,8 +57,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { addToast } = useToast();
 
   useEffect(() => {
-    if (status === "loading") return;
-    if (status === "unauthenticated") {
+    if (loading) return;
+    if (!user) {
       setHydrated(true);
       return;
     }
@@ -91,7 +91,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     loadData();
-  }, [addToast, status]);
+  }, [addToast, loading, user]);
 
   const reloadStudents = async () => setStudents(await StudentService.getStudents().catch(() => []));
   const reloadCourses = async () => setCourses(await CourseService.getCourses().catch(() => []));

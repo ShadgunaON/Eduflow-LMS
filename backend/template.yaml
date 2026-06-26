@@ -1,0 +1,724 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  EduFlow LMS Backend
+  AWS SAM Template for Decoupled Serverless Backend
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        DYNAMODB_TABLE_NAME: !Ref TableName
+
+Parameters:
+  TableName:
+    Type: String
+    Default: EduflowLMS
+    Description: Name of the existing DynamoDB table
+
+Resources:
+  # API Gateway
+  EduFlowApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/us-east-1_hhb2NN8Nw" # Hardcoded based on env file, can be parameterized
+
+  # Lambda Functions
+  GetCoursesFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/courses.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/courses.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetCourses:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /courses
+            Method: get
+        CreateCourse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /courses
+            Method: post
+
+  GetStudentsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/students.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/students.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetStudents:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /students
+            Method: get
+        CreateStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /students
+            Method: post
+        UpdateStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /students/{id}
+            Method: put
+        DeleteStudent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /students/{id}
+            Method: delete
+
+  GetEnrollmentsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/enrollments.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/enrollments.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetEnrollments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /enrollments
+            Method: get
+        CreateEnrollment:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /enrollments
+            Method: post
+
+  GetActivitiesFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/activities.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/activities.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetActivities:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /activities
+            Method: get
+        CreateActivity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /activities
+            Method: post
+
+  AssignmentsFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/assignments.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/assignments.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetAssignments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /assignments
+            Method: get
+        CreateAssignment:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /assignments
+            Method: post
+        SubmitAssignment:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /assignments/submit
+            Method: post
+
+  QuizzesFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/quizzes.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/quizzes.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetQuizzes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /quizzes
+            Method: get
+        CreateQuiz:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /quizzes
+            Method: post
+        SubmitQuizAttempt:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /quizzes/attempt
+            Method: post
+
+  ProfileFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        EntryPoints:
+          - src/handlers/profile.js
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/profile.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TableName
+      Events:
+        GetProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /profile
+            Method: get
+        UpdateProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /profile
+            Method: put
+
+  # AppSync GraphQL Resources
+  EduFlowGraphQLApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: EduFlowGraphQL
+      AuthenticationType: AMAZON_COGNITO_USER_POOLS
+      UserPoolConfig:
+        UserPoolId: us-east-1_hhb2NN8Nw
+        AwsRegion: !Ref AWS::Region
+        DefaultAction: ALLOW
+
+  EduFlowGraphQLSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      DefinitionS3Location: schema.graphql
+
+  AppSyncLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt GetCoursesFunction.Arn
+
+  CoursesDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: CoursesDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt GetCoursesFunction.Arn
+
+  GetCoursesResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getCourses
+      DataSourceName: !GetAtt CoursesDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  CreateCourseResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: createCourse
+      DataSourceName: !GetAtt CoursesDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  StudentsDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: StudentsDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt GetStudentsFunction.Arn
+
+  EnrollmentsDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: EnrollmentsDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt GetEnrollmentsFunction.Arn
+
+  ActivitiesDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: ActivitiesDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt GetActivitiesFunction.Arn
+
+  AssignmentsDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: AssignmentsDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt AssignmentsFunction.Arn
+
+  QuizzesDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: QuizzesDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt QuizzesFunction.Arn
+
+  ProfileDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      Name: ProfileDataSource
+      Type: AWS_LAMBDA
+      ServiceRoleArn: !GetAtt AppSyncLambdaRole.Arn
+      LambdaConfig:
+        LambdaFunctionArn: !GetAtt ProfileFunction.Arn
+
+  GetStudentsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getStudents
+      DataSourceName: !GetAtt StudentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  CreateStudentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: createStudent
+      DataSourceName: !GetAtt StudentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  UpdateStudentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: updateStudent
+      DataSourceName: !GetAtt StudentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  DeleteStudentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: deleteStudent
+      DataSourceName: !GetAtt StudentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  GetEnrollmentsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getEnrollments
+      DataSourceName: !GetAtt EnrollmentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  CreateEnrollmentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: createEnrollment
+      DataSourceName: !GetAtt EnrollmentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  GetActivitiesResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getActivities
+      DataSourceName: !GetAtt ActivitiesDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  GetAssignmentsResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getAssignments
+      DataSourceName: !GetAtt AssignmentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  CreateAssignmentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: createAssignment
+      DataSourceName: !GetAtt AssignmentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  SubmitAssignmentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: submitAssignment
+      DataSourceName: !GetAtt AssignmentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  GradeAssignmentResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: gradeAssignment
+      DataSourceName: !GetAtt AssignmentsDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  GetQuizzesResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getQuizzes
+      DataSourceName: !GetAtt QuizzesDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  CreateQuizResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: createQuiz
+      DataSourceName: !GetAtt QuizzesDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  SubmitQuizAttemptResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: submitQuizAttempt
+      DataSourceName: !GetAtt QuizzesDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  GetProfileResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Query
+      FieldName: getProfile
+      DataSourceName: !GetAtt ProfileDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+  UpdateProfileResolver:
+    Type: AWS::AppSync::Resolver
+    Properties:
+      ApiId: !GetAtt EduFlowGraphQLApi.ApiId
+      TypeName: Mutation
+      FieldName: updateProfile
+      DataSourceName: !GetAtt ProfileDataSource.Name
+      RequestMappingTemplate: |
+        {
+          "version": "2018-05-29",
+          "operation": "Invoke",
+          "payload": $util.toJson($context)
+        }
+      ResponseMappingTemplate: |
+        #if($context.error)
+          $util.error($context.error.message, $context.error.type)
+        #end
+        $util.toJson($context.result)
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${EduFlowApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+
+  GraphQLApiUrl:
+    Description: "AppSync GraphQL API endpoint URL"
+    Value: !GetAtt EduFlowGraphQLApi.GraphQLUrl

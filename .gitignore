@@ -46,3 +46,7 @@ playwright-report/
 test-results/
 *.sqlite
 *.sqlite-journal
+
+backend/.aws-sam/*
+backend/node_modules/*
+backend/package-lock.json
