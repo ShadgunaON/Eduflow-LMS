@@ -93,3 +93,8 @@ export const QuizService = {
   addQuiz: (data: any) => fetchApi<any>("/api/quizzes", { method: "POST", body: JSON.stringify(data) }),
   attemptQuiz: (data: { quizId: string, score?: number, status?: string }) => fetchApi<any>("/api/quizzes/attempt", { method: "POST", body: JSON.stringify(data) }),
 };
+
+export const ProfileService = {
+  getProfile: () => fetchApi<any>("/api/profile"),
+  updateProfile: (data: any) => fetchApi<any>("/api/profile", { method: "PUT", body: JSON.stringify(data) }),
+};

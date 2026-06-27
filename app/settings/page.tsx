@@ -5,6 +5,7 @@ import { useSettings } from "../context/SettingsContext";
 import { useApp } from "../context/AppContext";
 import { useToast } from "../context/ToastContext";
 import { useAuth } from "../context/AuthContext";
+import { ProfileService } from "../lib/api";
 import { DashboardCard } from "../components/ui/DashboardCard";
 import { UserAvatar } from "../components/ui/UserAvatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,9 +61,8 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await fetch("/api/profile");
-        if (res.ok) {
-          const data = await res.json();
+        const data = await ProfileService.getProfile();
+        if (data) {
           setProfileData({
             name: data.name || "",
             email: data.email || "",
@@ -93,24 +93,13 @@ export default function SettingsPage() {
 
     setIsSavingProfile(true);
     try {
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: profileData.name }),
-      });
-
-      if (res.ok) {
-        const updated = await res.json();
-        setProfileData((prev) => prev ? { ...prev, name: updated.name } : null);
-        // Update local session context state
-        await updateUser({ name: updated.name });
-        addToast("Profile updated successfully", "success");
-      } else {
-        const errorData = await res.json();
-        addToast(errorData.error || "Failed to update profile", "error");
-      }
-    } catch (err) {
-      addToast("Error saving profile changes", "error");
+      const updated = await ProfileService.updateProfile({ name: profileData.name });
+      setProfileData((prev) => prev ? { ...prev, name: updated.name } : null);
+      // Update local session context state
+      await updateUser({ name: updated.name });
+      addToast("Profile updated successfully", "success");
+    } catch (err: any) {
+      addToast(err.message || "Error saving profile changes", "error");
     } finally {
       setIsSavingProfile(false);
     }
@@ -175,30 +164,21 @@ export default function SettingsPage() {
 
     setIsSavingPassword(true);
     try {
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "password",
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-          confirmPassword: passwordForm.confirmPassword,
-        }),
+      await ProfileService.updateProfile({
+        type: "password",
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        confirmPassword: passwordForm.confirmPassword,
       });
 
-      if (res.ok) {
-        addToast("Password changed successfully", "success");
-        setPasswordForm({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-      } else {
-        const errorData = await res.json();
-        addToast(errorData.error || "Failed to change password", "error");
-      }
-    } catch (err) {
-      addToast("Error changing password", "error");
+      addToast("Password changed successfully", "success");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err: any) {
+      addToast(err.message || "Error changing password", "error");
     } finally {
       setIsSavingPassword(false);
     }

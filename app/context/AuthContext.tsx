@@ -45,12 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const currentUser = await getCurrentUser();
         const session = await fetchAuthSession();
-        // Since we are decoupling, we will temporarily assign a default role and name.
-        // Once the API Gateway is setup, we can fetch the user's DynamoDB profile here.
+        const payload = session.tokens?.idToken?.payload;
+        const role = (payload?.["custom:role"] as string) || "STUDENT";
+        const name = (payload?.name as string) || "User";
+        
         setUser({
           email: currentUser.signInDetails?.loginId || "",
-          name: "User", // Will fetch from DB later
-          role: "Student", // Will fetch from DB later
+          name: name,
+          role: role.toUpperCase(),
         });
       } catch (err) {
         setUser(null);
@@ -70,10 +72,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (isSignedIn) {
         const currentUser = await getCurrentUser();
+        const session = await fetchAuthSession();
+        const payload = session.tokens?.idToken?.payload;
+        const role = (payload?.["custom:role"] as string) || "STUDENT";
+        const name = (payload?.name as string) || "User";
+        
         setUser({
           email: currentUser.signInDetails?.loginId || data.email as string,
-          name: "User",
-          role: "Student",
+          name: name,
+          role: role.toUpperCase(),
         });
         router.push("/dashboard");
       }
