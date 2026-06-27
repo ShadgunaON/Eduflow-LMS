@@ -25,7 +25,7 @@ const studentSchema = z.object({
 // -----------------------------------------------------------------------------
 function hasRole(claims, allowedRoles) {
   if (!claims) return false;
-  const groups = claims["cognito:groups"];
+  const groups = claims['custom:role'] || claims['cognito:groups'];
   if (!groups) return false;
   const userGroups = Array.isArray(groups) ? groups : groups.split(",");
   return allowedRoles.some((role) => userGroups.includes(role));
