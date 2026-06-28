@@ -31,6 +31,7 @@ interface AuthContextType {
   login: (data: Record<string, unknown>) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (data: { name?: string; image?: string }) => Promise<void>;
+  getToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -109,8 +110,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser((prev) => (prev ? { ...prev, ...data } : null));
   }
 
+  async function getToken() {
+    try {
+      const session = await fetchAuthSession();
+      return session.tokens?.idToken?.toString() || null;
+    } catch (error) {
+      console.error("Failed to get token:", error);
+      return null;
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser, getToken }}>
       {children}
     </AuthContext.Provider>
   );

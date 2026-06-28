@@ -29,7 +29,7 @@ import {
 type Tab = "profile" | "appearance" | "security" | "data";
 
 export default function SettingsPage() {
-  const { user, updateUser, login } = useAuth();
+  const { user, updateUser, login, getToken } = useAuth();
   const { settings, updateSettings, resetSettings } = useSettings();
   const { resetAll } = useApp();
   const { addToast } = useToast();
@@ -127,10 +127,7 @@ export default function SettingsPage() {
     formData.append("file", file);
 
     try {
-      // Get Cognito Session for Authorization Header
-      const { fetchAuthSession } = await import("aws-amplify/auth");
-      const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.toString();
+      const token = await getToken();
 
       const res = await fetch("/api/profile/upload", {
         method: "POST",
@@ -151,6 +148,7 @@ export default function SettingsPage() {
         addToast(errData.error || "Failed to upload image", "error");
       }
     } catch (err) {
+      console.error("Upload fetch error:", err);
       addToast("Error uploading profile image", "error");
     } finally {
       setIsUploading(false);

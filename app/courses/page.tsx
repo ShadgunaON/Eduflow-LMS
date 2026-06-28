@@ -25,7 +25,7 @@ const CATEGORIES = ["Frontend", "Backend", "Fullstack", "Language", "DevOps", "O
 
 export default function CoursesPage() {
   const { courses, enrollments, addCourse, updateCourse, deleteCourse } = useApp();
-  const { user } = useAuth();
+  const { user, getToken } = useAuth();
   const { addToast } = useToast();
   const isStudent = user?.role?.toUpperCase() === "STUDENT";
 
@@ -166,9 +166,7 @@ export default function CoursesPage() {
     formData.append("file", file);
 
     try {
-      const { fetchAuthSession } = await import("aws-amplify/auth");
-      const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.toString();
+      const token = await getToken();
 
       const res = await fetch("/api/courses/upload", {
         method: "POST",
@@ -187,6 +185,7 @@ export default function CoursesPage() {
         addToast(errData.error || "Failed to upload image", "error");
       }
     } catch (err) {
+      console.error("Course upload fetch error:", err);
       addToast("Error uploading thumbnail", "error");
     } finally {
       setIsUploading(false);
