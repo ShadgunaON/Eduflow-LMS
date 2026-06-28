@@ -5,12 +5,14 @@ import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import path from "path";
 
-const AWS_REGION = process.env.AWS_REGION;
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
-const IS_MOCK_MODE = !AWS_REGION || !S3_BUCKET_NAME;
+const AWS_REGION = process.env.AWS_REGION || "us-east-1";
+const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME || "eduflow-lms-storage-use1-siddhi-2026";
+
+// Force S3 usage instead of mock mode (which crashes in AWS Lambda due to read-only filesystem)
+const IS_MOCK_MODE = false;
 
 const s3Client = new S3Client({
-  region: AWS_REGION || "us-east-1",
+  region: AWS_REGION,
 });
 
 export const uploadToS3 = async (
@@ -67,10 +69,7 @@ export const getPresignedUrl = async (s3UrlOrKey: string | null, expiresIn: numb
     return s3UrlOrKey;
   }
 
-  const bucketName = process.env.S3_BUCKET_NAME;
-  if (!bucketName) {
-    throw new Error("S3_BUCKET_NAME environment variable is missing");
-  }
+  const bucketName = S3_BUCKET_NAME;
 
   const command = new GetObjectCommand({
     Bucket: bucketName,
