@@ -49,7 +49,7 @@ interface Props {
 export default function Sidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname();
   const { settings } = useSettings();
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, login } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -172,6 +172,32 @@ export default function Sidebar({ isOpen, onClose }: Props) {
             );
           })}
         </nav>
+
+        {/* --- TEST SWITCHER (For Demo Purposes) --- */}
+        <div className={cn("px-4 py-4 border-t border-slate-800/60 bg-slate-900/50 flex flex-col gap-2 transition-all", isCollapsed ? "items-center" : "items-stretch")}>
+          {!isCollapsed && <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">🧪 Test Switcher</p>}
+          <button
+            onClick={() => login({ email: "admin@eduflow.com", password: "Test@12345" })}
+            className={cn("text-xs font-bold bg-primary/20 hover:bg-primary/40 text-primary-light py-1.5 rounded-lg transition-colors text-left flex items-center gap-2", isCollapsed ? "px-2 justify-center" : "px-3")}
+            title="Switch to Admin"
+          >
+            <span>👑</span> {!isCollapsed && "Admin"}
+          </button>
+          <button
+            onClick={() => login({ email: "yhshadgunasiddhi@gmail.com", password: "Test@12345" })}
+            className={cn("text-xs font-bold bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 py-1.5 rounded-lg transition-colors text-left flex items-center gap-2", isCollapsed ? "px-2 justify-center" : "px-3")}
+            title="Switch to Tutor"
+          >
+            <span>👨‍🏫</span> {!isCollapsed && "Tutor"}
+          </button>
+          <button
+            onClick={() => login({ email: "harshavardhahyper@gmail.com", password: "Test@12345" })}
+            className={cn("text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 py-1.5 rounded-lg transition-colors text-left flex items-center gap-2", isCollapsed ? "px-2 justify-center" : "px-3")}
+            title="Switch to Student"
+          >
+            <span>🎓</span> {!isCollapsed && "Student"}
+          </button>
+        </div>
 
         {/* User Profile Footer */}
         <div className="p-4 border-t border-slate-800/60 flex-shrink-0">

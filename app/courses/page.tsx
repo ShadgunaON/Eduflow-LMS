@@ -166,8 +166,15 @@ export default function CoursesPage() {
     formData.append("file", file);
 
     try {
+      const { fetchAuthSession } = await import("aws-amplify/auth");
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+
       const res = await fetch("/api/courses/upload", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
         body: formData,
       });
 

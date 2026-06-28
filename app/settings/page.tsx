@@ -127,8 +127,16 @@ export default function SettingsPage() {
     formData.append("file", file);
 
     try {
+      // Get Cognito Session for Authorization Header
+      const { fetchAuthSession } = await import("aws-amplify/auth");
+      const session = await fetchAuthSession();
+      const token = session.tokens?.idToken?.toString();
+
       const res = await fetch("/api/profile/upload", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
         body: formData,
       });
 
