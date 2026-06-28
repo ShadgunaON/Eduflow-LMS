@@ -6,10 +6,10 @@ const { scanByPKPrefix, putItem, getItem, queryItems, deleteItem } = require("./
 const { z } = require("zod");
 const { v4: uuidv4 } = require("uuid");
 
-const CLIENT_ID = process.env.COGNITO_CLIENT_ID || "";
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: process.env.AWS_REGION || "us-east-1",
-});
+// const CLIENT_ID = process.env.COGNITO_CLIENT_ID || "";
+// const cognitoClient = new CognitoIdentityProviderClient({
+//   region: process.env.AWS_REGION || "us-east-1",
+// });
 
 // -----------------------------------------------------------------------------
 // ZOD SCHEMAS (exact match from app/lib/schemas.ts)
