@@ -43,7 +43,7 @@ function hasRole(claims, allowedRoles) {
 
 async function getQuizzes(claims) {
   const userEmail = claims?.email;
-  const isStudent = !hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"]);
+  const isStudent = !hasRole(claims, ["ADMIN", "TUTOR"]);
 
   if (isStudent) {
     const enrollments = await queryItems(`USER#${userEmail}`, "ENROLL#");

@@ -50,9 +50,9 @@ export const uploadToS3 = async (
     await upload.done();
     // Return the public S3 URL
     return `https://${bucketName}.s3.${AWS_REGION || "us-east-1"}.amazonaws.com/${uniqueFileName}`;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error uploading to S3:", error);
-    throw new Error("Failed to upload file to S3");
+    throw new Error(error.message || "Failed to upload file to S3");
   }
 };
 

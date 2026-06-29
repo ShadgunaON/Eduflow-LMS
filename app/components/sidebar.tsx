@@ -32,13 +32,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard, roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR] },
-  { href: "/students",   label: "Students",   icon: Users,           roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.TUTOR] },
-  { href: "/courses",    label: "Courses",    icon: BookOpen,        roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR] },
-  { href: "/enrollment", label: "Enrollments",icon: ClipboardList,   roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR] },
-  { href: "/assignments",label: "Assignments",icon: FileText,        roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR] },
-  { href: "/quizzes",    label: "Quizzes",    icon: HelpCircle,      roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR] },
-  { href: "/settings",   label: "Settings",   icon: Settings,        roles: [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR] },
+  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard, roles: [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR] },
+  { href: "/students",   label: "Students",   icon: Users,           roles: [ROLES.ADMIN, ROLES.TUTOR] },
+  { href: "/courses",    label: "Courses",    icon: BookOpen,        roles: [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR] },
+  { href: "/enrollment", label: "Enrollments",icon: ClipboardList,   roles: [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR] },
+  { href: "/assignments",label: "Assignments",icon: FileText,        roles: [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR] },
+  { href: "/quizzes",    label: "Quizzes",    icon: HelpCircle,      roles: [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR] },
+  { href: "/settings",   label: "Settings",   icon: Settings,        roles: [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR] },
 ];
 
 interface Props {

@@ -1,5 +1,5 @@
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, ScanCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
+const { DynamoDBDocumentClient, ScanCommand, PutCommand, GetCommand } = require("@aws-sdk/lib-dynamodb");
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const { z } = require("zod");
@@ -85,7 +85,7 @@ async function getCourses(pageStr = "1", limitStr = "50") {
 }
 
 async function createCourse(input, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;
@@ -127,6 +127,100 @@ async function createCourse(input, claims) {
     createdAt: newCourse.createdAt,
     updatedAt: newCourse.updatedAt
   };
+}
+
+// -----------------------------------------------------------------------------
+// MAIN HANDLER
+// -----------------------------------------------------------------------------
+async function updateCourse(id, input, claims) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
+    const err = new Error("Unauthorized");
+    err.code = "UNAUTHORIZED";
+    throw err;
+  }
+
+  const validated = courseSchema.partial().parse(input);
+
+  const getCmd = new GetCommand({
+    TableName: TABLE_NAME,
+    Key: { PK: `COURSE#${id}`, SK: "METADATA" }
+  });
+  const existing = await docClient.send(getCmd);
+  
+  if (!existing.Item) {
+    const err = new Error("Course not found");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+
+  const updatedCourse = {
+    ...existing.Item,
+    ...validated,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const activityItem = {
+    PK: "ACTIVITY",
+    SK: `DATE#${new Date().toISOString()}`,
+    type: "course",
+    message: `${updatedCourse.name} course updated`,
+    icon: "✏️",
+    createdAt: new Date().toISOString(),
+  };
+
+  await Promise.all([
+    docClient.send(new PutCommand({ TableName: TABLE_NAME, Item: updatedCourse })),
+    docClient.send(new PutCommand({ TableName: TABLE_NAME, Item: activityItem }))
+  ]);
+
+  return {
+    id: updatedCourse.id,
+    name: updatedCourse.name,
+    duration: updatedCourse.duration,
+    fee: updatedCourse.fee,
+    category: updatedCourse.category,
+    imageUrl: updatedCourse.imageUrl,
+    createdAt: updatedCourse.createdAt,
+    updatedAt: updatedCourse.updatedAt
+  };
+}
+
+async function deleteCourse(id, claims) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
+    const err = new Error("Unauthorized");
+    err.code = "UNAUTHORIZED";
+    throw err;
+  }
+
+  const getCmd = new GetCommand({
+    TableName: TABLE_NAME,
+    Key: { PK: `COURSE#${id}`, SK: "METADATA" }
+  });
+  const existing = await docClient.send(getCmd);
+  
+  if (!existing.Item) {
+    const err = new Error("Course not found");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+
+  const { DeleteCommand } = require("@aws-sdk/lib-dynamodb");
+
+  const activityItem = {
+    PK: "ACTIVITY",
+    SK: `DATE#${new Date().toISOString()}`,
+    type: "course",
+    message: `${existing.Item.name} course deleted`,
+    icon: "🗑️",
+    createdAt: new Date().toISOString(),
+  };
+
+  await Promise.all([
+    docClient.send(new DeleteCommand({ TableName: TABLE_NAME, Key: { PK: `COURSE#${id}`, SK: "METADATA" } })),
+    docClient.send(new PutCommand({ TableName: TABLE_NAME, Item: activityItem }))
+  ]);
+
+  return { success: true };
 }
 
 // -----------------------------------------------------------------------------
@@ -176,6 +270,31 @@ exports.handler = async (event) => {
         };
       }
 
+      if (httpMethod === "PATCH" || httpMethod === "PUT") {
+        const claims = event.requestContext?.authorizer?.claims;
+        const body = JSON.parse(event.body);
+        const id = event.pathParameters?.id;
+        if (!id) throw new Error("Missing course ID");
+        const result = await updateCourse(id, body, claims);
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify(result),
+        };
+      }
+
+      if (httpMethod === "DELETE") {
+        const claims = event.requestContext?.authorizer?.claims;
+        const id = event.pathParameters?.id;
+        if (!id) throw new Error("Missing course ID");
+        const result = await deleteCourse(id, claims);
+        return {
+          statusCode: 200,
+          headers: { "Access-Control-Allow-Origin": "*" },
+          body: JSON.stringify(result),
+        };
+      }
+
       return {
         statusCode: 405,
         headers: { "Access-Control-Allow-Origin": "*" },
@@ -202,6 +321,13 @@ exports.handler = async (event) => {
         statusCode: 403,
         headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ error: "Unauthorized" }),
+      };
+    }
+    if (error.code === "NOT_FOUND") {
+      return {
+        statusCode: 404,
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify({ error: "Not Found" }),
       };
     }
     if (error.name === 'ZodError') {

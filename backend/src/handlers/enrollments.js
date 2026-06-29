@@ -57,7 +57,7 @@ async function getEnrollments(pageStr = "1", limitStr = "50") {
 }
 
 async function createEnrollment(input, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;
@@ -122,7 +122,7 @@ async function createEnrollment(input, claims) {
 }
 
 async function updateEnrollment(id, input, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;
@@ -164,7 +164,7 @@ async function updateEnrollment(id, input, claims) {
 }
 
 async function deleteEnrollment(id, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;

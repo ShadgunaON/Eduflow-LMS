@@ -29,7 +29,7 @@ function hasRole(claims, allowedRoles) {
 
 async function getAssignments(claims) {
   const userEmail = claims?.email;
-  const isStudent = !hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"]);
+  const isStudent = !hasRole(claims, ["ADMIN", "TUTOR"]);
 
   if (isStudent) {
     const enrollments = await queryItems(`USER#${userEmail}`, "ENROLL#");
@@ -133,7 +133,7 @@ async function getAssignments(claims) {
 }
 
 async function createAssignment(input, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;
@@ -148,7 +148,7 @@ async function createAssignment(input, claims) {
 }
 
 async function submitAssignment(input, claims) {
-  const isStudent = !hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"]);
+  const isStudent = !hasRole(claims, ["ADMIN", "TUTOR"]);
   if (!isStudent) {
     const err = new Error("Only students can submit.");
     err.code = "FORBIDDEN";
@@ -184,7 +184,7 @@ async function submitAssignment(input, claims) {
 }
 
 async function gradeAssignment(input, claims) {
-  const isStudent = !hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"]);
+  const isStudent = !hasRole(claims, ["ADMIN", "TUTOR"]);
   if (isStudent) {
     const err = new Error("Students cannot grade.");
     err.code = "FORBIDDEN";
@@ -253,7 +253,7 @@ exports.handler = async (event) => {
         const body = JSON.parse(event.body);
 
         if (path.endsWith("/submit")) {
-          const isStudent = !hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"]);
+          const isStudent = !hasRole(claims, ["ADMIN", "TUTOR"]);
           if (isStudent) {
             return { statusCode: 400, headers: { "Access-Control-Allow-Origin": "*" }, body: JSON.stringify({ error: "Students must use multipart form upload." }) };
           }

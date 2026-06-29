@@ -21,8 +21,11 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     if (!file) {
-      console.log("Upload failed: No file provided");
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+      console.error("Upload error details:", "No file provided");
+      return NextResponse.json(
+        { error: "Failed to upload file to S3", details: "No file provided" },
+        { status: 500 }
+      );
     }
     console.log(`File detected: ${file.name}, size: ${file.size}, type: ${file.type}`);
 

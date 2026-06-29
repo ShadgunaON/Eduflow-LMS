@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const role = payload["custom:role"] || "STUDENT";
 
     // Only Admins and Instructors can upload course images
-    if (!hasRole(role, ["ADMIN", "INSTRUCTOR"])) {
+    if (!hasRole(role, ["ADMIN", "TUTOR"])) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

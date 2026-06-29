@@ -69,7 +69,7 @@ async function getStudents(pageStr = "1", limitStr = "50") {
 }
 
 async function createStudent(input, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;
@@ -116,7 +116,7 @@ async function createStudent(input, claims) {
 }
 
 async function updateStudent(id, input, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;
@@ -155,7 +155,7 @@ async function updateStudent(id, input, claims) {
 }
 
 async function deleteStudent(id, claims) {
-  if (!hasRole(claims, ["ADMIN", "INSTRUCTOR", "TUTOR"])) {
+  if (!hasRole(claims, ["ADMIN", "TUTOR"])) {
     const err = new Error("Unauthorized");
     err.code = "UNAUTHORIZED";
     throw err;

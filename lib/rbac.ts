@@ -4,7 +4,7 @@
  */
 export const ROLES = {
   ADMIN: "ADMIN",
-  INSTRUCTOR: "INSTRUCTOR",
+  
   STUDENT: "STUDENT",
   TUTOR: "TUTOR",
 } as const;
@@ -25,12 +25,12 @@ export function hasRole(userRole: AppRole | string | undefined | null, allowedRo
  * Define which roles can access which route prefixes.
  */
 export const ROUTE_PERMISSIONS: Record<string, AppRole[]> = {
-  "/dashboard": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR],
-  "/students": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.TUTOR],
-  "/courses": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR], 
-  "/enrollment": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR],
-  "/assignments": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR],
-  "/quizzes": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR],
-  "/settings": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.STUDENT, ROLES.TUTOR],
-  "/api/students": [ROLES.ADMIN, ROLES.INSTRUCTOR, ROLES.TUTOR],
+  "/dashboard": [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR],
+  "/students": [ROLES.ADMIN, ROLES.TUTOR],
+  "/courses": [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR], 
+  "/enrollment": [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR],
+  "/assignments": [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR],
+  "/quizzes": [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR],
+  "/settings": [ROLES.ADMIN, ROLES.STUDENT, ROLES.TUTOR],
+  "/api/students": [ROLES.ADMIN, ROLES.TUTOR],
 };
