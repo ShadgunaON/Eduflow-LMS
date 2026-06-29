@@ -25,9 +25,9 @@ export default function Dashboard() {
 
   if (!hydrated) {
     return (
-      <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-6 animate-pulse">
+      <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6 animate-pulse">
         <div className="h-48 bg-surface-muted rounded-3xl" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="h-32 bg-surface-muted rounded-3xl" />
           ))}
@@ -108,12 +108,12 @@ export default function Dashboard() {
       initial="hidden"
       animate="show"
       variants={container}
-      className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8"
+      className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6"
     >
       {/* ── HERO SECTION ────────────────────────────────────────────── */}
-      <motion.div variants={item} className="bg-surface border border-surface-border rounded-2xl shadow-sm p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+      <motion.div variants={item} className="bg-surface border border-surface-border rounded-2xl shadow-sm p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-foreground tracking-tight mb-2">
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-2 truncate">
             Welcome back, {firstName}
           </h1>
           <p className="text-slate-500 text-base max-w-xl">
@@ -128,14 +128,14 @@ export default function Dashboard() {
               if (isStudent) router.push('/courses');
               else addToast("Reports module coming in Phase 4", "info");
             }}
-            className="px-6 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary-hover transition-colors shadow-sm active:scale-95"
+            className="px-4 py-2 text-sm bg-primary text-white font-medium rounded-lg hover:bg-primary-hover transition-colors shadow-sm active:scale-95"
           >
             {isStudent ? "Browse Courses" : "View Reports"}
           </button>
           {!isStudent && (
             <button 
               onClick={() => router.push('/courses')}
-              className="px-6 py-2.5 bg-white text-slate-700 font-semibold rounded-lg border border-surface-border hover:bg-slate-50 transition-colors shadow-sm active:scale-95"
+              className="px-4 py-2 text-sm bg-white text-slate-700 font-medium rounded-lg border border-surface-border hover:bg-slate-50 transition-colors shadow-sm active:scale-95"
             >
               Add New Course
             </button>

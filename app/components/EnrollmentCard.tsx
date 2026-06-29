@@ -56,7 +56,7 @@ export default function EnrollmentCard({
   return (
     // REACT CONCEPT: className (not class) — JSX uses camelCase attributes
     // because JSX is transpiled to JS and `class` is a reserved keyword.
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition-all group">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md transition-all group">
 
       {/* Left: Avatar + Info */}
       <div className="flex items-center gap-4">

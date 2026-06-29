@@ -147,11 +147,11 @@ export default function AssignmentsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8">
+    <div className="p-4 lg:p-6 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">Assignments</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight truncate">Assignments</h1>
           <p className="text-slate-500 mt-2 text-sm font-medium">
             Manage your course work, submissions, and deadlines.
           </p>
@@ -159,7 +159,7 @@ export default function AssignmentsPage() {
         {!isStudent && (
           <button 
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-6 py-3 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl transition-all shadow-md active:scale-95"
+            className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-medium rounded-lg transition-all shadow-md active:scale-95"
           >
             {showCreateForm ? "Cancel" : "Create Assignment"}
           </button>
@@ -167,7 +167,7 @@ export default function AssignmentsPage() {
       </div>
 
       {showCreateForm && !isStudent && (
-        <DashboardCard className="p-6 sm:p-8 bg-surface border border-surface-border shadow-card">
+        <DashboardCard className="p-4 sm:p-6 bg-surface border border-surface-border shadow-card rounded-2xl">
           <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-5">New Assignment</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input 
@@ -192,11 +192,11 @@ export default function AssignmentsPage() {
               className="px-4 py-3 bg-surface-muted border border-surface-border text-foreground rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all font-medium"
             />
           </div>
-          <button onClick={handleCreateAssignment} className="mt-5 px-6 py-3 bg-success hover:bg-success/90 text-white font-bold rounded-xl shadow-md transition-all active:scale-95">Save Assignment</button>
+          <button onClick={handleCreateAssignment} className="mt-5 px-4 py-2 bg-success hover:bg-success/90 text-white text-sm font-medium rounded-lg shadow-md transition-all active:scale-95">Save Assignment</button>
         </DashboardCard>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left Column: Assignments List */}
         <div className="xl:col-span-2 space-y-6">
           <DashboardCard className="p-0 overflow-hidden shadow-card">

@@ -228,7 +228,7 @@ export default function CoursesPage() {
       {/* Page header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">Courses</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight truncate">Courses</h1>
           <p className="text-slate-500 mt-2 text-sm font-medium">
             Manage your {courses.length} educational programs
           </p>
@@ -237,7 +237,7 @@ export default function CoursesPage() {
 
       {/* Add / Edit Form */}
       {!isStudent && (
-        <div className="bg-surface p-5 sm:p-8 rounded-[24px] mb-8 border border-surface-border shadow-card">
+        <div className="bg-surface p-4 sm:p-6 rounded-2xl mb-8 border border-surface-border shadow-card">
         <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-5">
           {isEditing ? "✏️  Edit Course" : "➕  Add New Course"}
         </h2>
@@ -331,7 +331,7 @@ export default function CoursesPage() {
 
           <button
             onClick={isEditing ? handleSaveEdit : handleAdd}
-            className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 whitespace-nowrap mt-1 sm:mt-0"
+            className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-all active:scale-95 whitespace-nowrap mt-1 sm:mt-0"
           >
             {isEditing ? "Save Changes" : "+ Add Course"}
           </button>
@@ -339,7 +339,7 @@ export default function CoursesPage() {
           {isEditing && (
             <button
               onClick={resetForm}
-              className="bg-surface-muted hover:bg-surface-border text-foreground px-6 py-3 rounded-xl text-sm font-bold transition-colors whitespace-nowrap mt-1 sm:mt-0"
+              className="bg-surface-muted hover:bg-surface-border text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap mt-1 sm:mt-0"
             >
               Cancel
             </button>
@@ -398,7 +398,7 @@ export default function CoursesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {sortedFiltered.map((course) => (
             <CourseCard
               key={course.id}

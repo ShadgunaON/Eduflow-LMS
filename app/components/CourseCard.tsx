@@ -27,7 +27,7 @@ export default function CourseCard({ id, name, duration, fee, category, imageUrl
       className="bg-surface border border-surface-border rounded-xl overflow-hidden shadow-card hover:shadow-card-dark hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full"
     >
       {/* Thumbnail Header */}
-      <div className={`h-36 sm:h-44 w-full relative flex items-center justify-center overflow-hidden bg-surface-muted`}>
+      <div className={`h-32 sm:h-40 w-full relative flex items-center justify-center overflow-hidden bg-surface-muted`}>
         {imageUrl ? (
           <Image src={imageUrl} alt={name} fill className="object-cover group-hover:scale-110 transition-transform duration-700 mix-blend-multiply opacity-90" />
         ) : (
@@ -76,7 +76,7 @@ export default function CourseCard({ id, name, duration, fee, category, imageUrl
         <div className="flex items-center gap-2 pt-4">
           <Link
             href={`/courses/${id}`}
-            className="flex-1 text-center bg-primary/10 hover:bg-primary/20 text-primary py-2.5 rounded-xl text-sm font-bold transition-colors"
+            className="flex-1 text-center bg-primary/10 hover:bg-primary/20 text-primary py-2 rounded-lg text-sm font-medium transition-colors"
           >
             View Details
           </Link>
@@ -86,7 +86,7 @@ export default function CourseCard({ id, name, duration, fee, category, imageUrl
                 onClick={onEdit}
                 title="Edit Course"
                 aria-label="Edit Course"
-                className="p-2.5 bg-surface-muted hover:bg-surface-border text-foreground rounded-xl transition-colors"
+                className="p-2 bg-surface-muted hover:bg-surface-border text-foreground rounded-lg transition-colors"
               >
                 <Edit2 size={16} />
               </button>
@@ -94,7 +94,7 @@ export default function CourseCard({ id, name, duration, fee, category, imageUrl
                 onClick={onDelete}
                 title="Delete Course"
                 aria-label="Delete Course"
-                className="p-2.5 bg-danger-light/30 hover:bg-danger-light/50 text-danger rounded-xl transition-colors"
+                className="p-2 bg-danger-light/30 hover:bg-danger-light/50 text-danger rounded-lg transition-colors"
               >
                 <Trash2 size={16} />
               </button>

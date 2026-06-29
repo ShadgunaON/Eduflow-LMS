@@ -38,7 +38,7 @@ export default function StudentCard({ id, name, email, course, onEdit, onDelete 
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-surface border border-surface-border p-5 sm:p-6 rounded-[24px] flex flex-col shadow-card hover:shadow-card-dark hover:-translate-y-1 transition-all duration-300 group"
+      className="bg-surface border border-surface-border p-4 sm:p-6 rounded-2xl flex flex-col shadow-card hover:shadow-card-dark hover:-translate-y-1 transition-all duration-300 group"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ export default function StudentCard({ id, name, email, course, onEdit, onDelete 
         <StatusBadge status={status} />
       </div>
 
-      <div className="bg-surface-muted rounded-[16px] p-4 flex-1 mb-5 border border-surface-border/50">
+      <div className="bg-surface-muted rounded-xl p-4 flex-1 mb-5 border border-surface-border/50">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
           <BookOpen size={16} className="text-primary" />
           <span className="truncate">{course}</span>
@@ -83,19 +83,19 @@ export default function StudentCard({ id, name, email, course, onEdit, onDelete 
       <div className="flex items-center gap-2 mt-auto">
         <a
           href={`/students/${id}`}
-          className="flex-[2] flex items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary py-2.5 rounded-xl text-sm font-bold transition-colors"
+          className="flex-[2] flex items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary py-2 rounded-lg text-sm font-medium transition-colors"
         >
           View Profile
         </a>
         <button
           onClick={onEdit}
-          className="flex-1 flex items-center justify-center gap-2 bg-surface-muted hover:bg-surface-border text-foreground py-2.5 rounded-xl text-sm font-bold transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 bg-surface-muted hover:bg-surface-border text-foreground py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Edit2 size={16} />
         </button>
         <button
           onClick={onDelete}
-          className="flex-1 flex items-center justify-center gap-2 bg-danger-light/30 hover:bg-danger-light/50 text-danger py-2.5 rounded-xl text-sm font-bold transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 bg-danger-light/30 hover:bg-danger-light/50 text-danger py-2 rounded-lg text-sm font-medium transition-colors"
         >
           <Trash2 size={16} />
         </button>

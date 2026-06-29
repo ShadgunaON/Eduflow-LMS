@@ -134,7 +134,7 @@ export default function EnrollmentPage() {
   }
 
   return (
-    <div className="p-6 lg:p-10 max-w-[1600px] mx-auto w-full space-y-8">
+    <div className="p-4 lg:p-6 max-w-[1600px] mx-auto w-full space-y-6">
       <ConfirmModal
         isOpen={deleteId !== null}
         title="Delete Enrollment"
@@ -146,7 +146,7 @@ export default function EnrollmentPage() {
 
       <div className="mb-2 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">Enrollments</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight truncate">Enrollments</h1>
           <p className="text-slate-500 mt-2 text-sm font-medium">Manage and track student course registrations.</p>
         </div>
       </div>
@@ -214,14 +214,14 @@ export default function EnrollmentPage() {
               <div className="pt-4">
                 <button
                   onClick={isEditing ? handleSaveEdit : handleAdd}
-                  className="w-full bg-primary hover:bg-primary-hover text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95"
+                  className="w-full bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-all active:scale-95"
                 >
                   {isEditing ? "Save Changes" : "Enroll Student"}
                 </button>
                 {isEditing && (
                   <button
                     onClick={resetForm}
-                    className="w-full mt-3 bg-surface-muted border border-surface-border text-foreground px-6 py-3.5 rounded-xl text-sm font-bold hover:bg-surface-border transition-all"
+                    className="w-full mt-3 bg-surface-muted border border-surface-border text-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-surface-border transition-all"
                   >
                     Cancel Edit
                   </button>
@@ -259,7 +259,7 @@ export default function EnrollmentPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto bg-surface rounded-b-[24px]">
+            <div className="flex-1 overflow-x-auto bg-surface rounded-b-2xl">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead className="bg-surface-muted/50 text-xs uppercase text-slate-500">
                   <tr>

@@ -149,7 +149,7 @@ export default function StudentsPage() {
       {/* Page header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground tracking-tight">Students</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight truncate">Students</h1>
           <p className="text-slate-500 mt-2 text-sm font-medium">
             Manage your {students.length} enrolled student{students.length !== 1 ? "s" : ""}
           </p>
@@ -157,7 +157,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Add / Edit Form */}
-      <div className="bg-surface p-5 sm:p-8 rounded-[24px] mb-8 border border-surface-border shadow-card">
+      <div className="bg-surface p-4 sm:p-6 rounded-2xl mb-8 border border-surface-border shadow-card">
         <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-5">
           {isEditing ? "✏️  Edit Student" : "➕  Add New Student"}
         </h2>
@@ -206,7 +206,7 @@ export default function StudentsPage() {
 
           <button
             onClick={isEditing ? handleSaveEdit : handleAdd}
-            className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all active:scale-95 whitespace-nowrap mt-1 sm:mt-0"
+            className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md transition-all active:scale-95 whitespace-nowrap mt-1 sm:mt-0"
           >
             {isEditing ? "Save Changes" : "+ Add Student"}
           </button>
@@ -214,7 +214,7 @@ export default function StudentsPage() {
           {isEditing && (
             <button
               onClick={resetForm}
-              className="bg-surface-muted hover:bg-surface-border text-foreground px-6 py-3 rounded-xl text-sm font-bold transition-colors whitespace-nowrap mt-1 sm:mt-0"
+              className="bg-surface-muted hover:bg-surface-border text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap mt-1 sm:mt-0"
             >
               Cancel
             </button>

@@ -141,7 +141,7 @@ export default function PremiumAuthPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            <h1 className="text-5xl font-extrabold text-white leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl font-bold text-white leading-tight tracking-tight mb-6">
               The Next Generation<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-light to-primary">
                 Learning Platform
@@ -194,7 +194,7 @@ export default function PremiumAuthPage() {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               <div className="mb-8">
-                <h2 className="text-3xl font-bold tracking-tight mb-2">
+                <h2 className="text-2xl font-bold tracking-tight mb-2">
                   {mode === "login" && "Welcome back"}
                   {mode === "register" && "Create an account"}
                   {mode === "forgot" && "Reset password"}
@@ -375,7 +375,7 @@ export default function PremiumAuthPage() {
                 <button
                   type="submit"
                   disabled={isLoading || (mode === "register" && strengthScore < 2)}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 mt-6 text-sm font-bold text-white bg-primary hover:bg-primary-hover rounded-xl transition-all disabled:opacity-50 shadow-md active:scale-[0.98]"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 mt-6 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-lg transition-all disabled:opacity-50 shadow-md active:scale-[0.98]"
                 >
                   {isLoading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

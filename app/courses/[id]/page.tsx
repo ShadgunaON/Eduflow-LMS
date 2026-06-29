@@ -38,7 +38,7 @@ export default function CourseDetailsPage() {
   const completedEnrollments = courseEnrollments.filter((e) => e.status === "Completed").length;
   const completionRate = courseEnrollments.length > 0 ? Math.round((completedEnrollments / courseEnrollments.length) * 100) : 0;
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 lg:p-6 max-w-7xl mx-auto space-y-6">
       <button 
         onClick={() => router.back()}
         className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -47,23 +47,23 @@ export default function CourseDetailsPage() {
       </button>
 
       {/* 1. Overview Hero Banner */}
-      <DashboardCard className="relative overflow-hidden p-0 sm:p-0 border-0 shadow-2xl">
+      <DashboardCard className="relative overflow-hidden p-0 sm:p-0 border-0 shadow-sm rounded-2xl">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-900 via-indigo-800 to-violet-900" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-500 rounded-full mix-blend-overlay filter blur-[120px] opacity-60 translate-x-1/3 -translate-y-1/3" />
         
         <div className="relative flex flex-col md:flex-row z-10">
           <div className="w-full md:w-1/3 h-48 md:h-auto bg-white/5 backdrop-blur-sm border-r border-white/10 flex items-center justify-center p-8">
-            <h1 className="text-4xl md:text-5xl font-black text-white text-center leading-tight drop-shadow-lg">
+            <h1 className="text-3xl md:text-4xl font-bold text-white text-center leading-tight drop-shadow-lg truncate">
               {course.name}
             </h1>
           </div>
-          <div className="w-full md:w-2/3 p-8 flex flex-col justify-center">
+          <div className="w-full md:w-2/3 p-6 flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-4">
               <span className="px-3 py-1 bg-white/10 text-white border border-white/20 text-xs font-bold uppercase tracking-wider rounded-full backdrop-blur-md">
                 {course.category || "Frontend"}
               </span>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-3 tracking-tight">{course.name}</h2>
+            <h2 className="text-2xl font-bold text-white mb-3 tracking-tight truncate">{course.name}</h2>
             <p className="text-indigo-100/80 max-w-2xl leading-relaxed">
               Comprehensive learning module designed to take students from beginner to advanced. Master the fundamentals and build production-ready projects.
             </p>

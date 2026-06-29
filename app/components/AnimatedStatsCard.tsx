@@ -63,7 +63,7 @@ export default function AnimatedStatsCard({
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900/50 backdrop-blur-2xl p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-2xl shadow-sm dark:shadow-none hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30 ${
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900/50 backdrop-blur-2xl p-4 sm:p-5 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-2xl shadow-sm dark:shadow-none hover:shadow-indigo-500/10 dark:hover:border-indigo-500/30 ${
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       }`}
       style={{ minWidth: 220 }}
@@ -79,7 +79,7 @@ export default function AnimatedStatsCard({
             {title}
           </p>
           <div className="flex items-baseline gap-2 mt-2">
-            <p className="text-3xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums tracking-tight">
               {prefix}
               {displayed.toLocaleString("en-IN")}
               {suffix}
