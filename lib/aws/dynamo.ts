@@ -25,7 +25,11 @@ defaultProvider()().then(
 
 const client = new DynamoDBClient({ region: AWS_REGION || "us-east-1" });
 export const docClient = DynamoDBDocumentClient.from(client);
-export const TABLE_NAME = DYNAMODB_TABLE_NAME || "EduflowLMS";
+
+if (!process.env.DYNAMODB_TABLE_NAME) {
+  console.warn("⚠️ WARNING: DYNAMODB_TABLE_NAME is not set in environment variables! Falling back to EduFlow-LMS-Data-USE1.");
+}
+export const TABLE_NAME = DYNAMODB_TABLE_NAME || "EduFlow-LMS-Data-USE1";
 
 export const putItem = async (item: Record<string, any>) => {
   if (IS_MOCK_MODE) {
