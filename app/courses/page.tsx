@@ -35,6 +35,8 @@ export default function CoursesPage() {
   const [fee, setFee]           = useState("");
   const [category, setCategory] = useState("Frontend");
   const [imageUrl, setImageUrl] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [imageChanged, setImageChanged] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +79,7 @@ export default function CoursesPage() {
         duration: duration.trim(),
         fee: fee.trim(),
         category,
-        imageUrl: imageUrl || undefined,
+        ...(imageUrl ? { imageUrl } : {}),
       });
       addToast("Course added successfully", "success");
       resetForm();
@@ -94,6 +96,8 @@ export default function CoursesPage() {
     setFee(course.fee);
     setCategory(course.category);
     setImageUrl(course.imageUrl || "");
+    setPreviewUrl(course.imageUrl || "");
+    setImageChanged(false);
     setErrors({});
     const scrollContainer = document.querySelector('main');
     if (scrollContainer) scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
@@ -108,7 +112,7 @@ export default function CoursesPage() {
         duration: duration.trim(),
         fee: fee.trim(),
         category,
-        imageUrl: imageUrl || null,
+        ...(imageChanged ? { imageUrl: imageUrl || null } : {}),
       });
       addToast("Course updated successfully", "success");
       resetForm();
@@ -142,6 +146,8 @@ export default function CoursesPage() {
     setFee("");
     setCategory("Frontend");
     setImageUrl("");
+    setPreviewUrl("");
+    setImageChanged(false);
     setEditingId(null);
     setErrors({});
   }
@@ -179,6 +185,8 @@ export default function CoursesPage() {
       if (res.ok) {
         const data = await res.json();
         setImageUrl(data.imageUrl);
+        setPreviewUrl(data.previewUrl || data.imageUrl);
+        setImageChanged(true);
         addToast("Thumbnail uploaded successfully", "success");
       } else {
         const errData = await res.json();
@@ -246,13 +254,13 @@ export default function CoursesPage() {
         <div className="mb-6 flex items-start gap-4">
           <div 
             className={`relative w-32 h-20 sm:w-40 sm:h-24 rounded-xl border-2 border-dashed overflow-hidden flex flex-col items-center justify-center cursor-pointer transition-colors group ${
-              imageUrl ? 'border-primary' : 'border-surface-border hover:border-primary hover:bg-primary/5'
+              previewUrl ? 'border-primary' : 'border-surface-border hover:border-primary hover:bg-primary/5'
             }`}
             onClick={() => !isUploading && fileInputRef.current?.click()}
           >
-            {imageUrl ? (
+            {previewUrl ? (
               <>
-                <Image src={imageUrl} alt="Thumbnail preview" fill className="object-cover opacity-80 group-hover:opacity-50 transition-opacity" />
+                <Image src={previewUrl} alt="Thumbnail preview" fill className="object-cover opacity-80 group-hover:opacity-50 transition-opacity" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40">
                   <span className="text-white text-xs font-bold bg-black/60 px-2 py-1 rounded">Change</span>
                 </div>
@@ -275,9 +283,9 @@ export default function CoursesPage() {
             />
           </div>
           
-          {imageUrl && (
+          {previewUrl && (
             <button 
-              onClick={() => setImageUrl("")}
+              onClick={() => { setImageUrl(""); setPreviewUrl(""); setImageChanged(true); }}
               className="p-1.5 text-slate-400 hover:text-danger hover:bg-danger/10 rounded-lg transition-colors mt-1"
               title="Remove Thumbnail"
             >

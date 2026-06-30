@@ -1,0 +1,251 @@
+2026-06-26T16:47:11.817Z [INFO]: # Build environment configured with Standard build compute type: 8GiB Memory, 4vCPUs, 128GB Disk Space
+2026-06-26T16:47:12.339Z [INFO]: # Cloning repository: git@github.com:ShadgunaON/Eduflow-LMS.git
+2026-06-26T16:47:12.928Z [INFO]: 
+2026-06-26T16:47:12.928Z [INFO]: Cloning into 'Eduflow-LMS'...
+2026-06-26T16:47:12.928Z [INFO]: # Switching to commit: 2bae6b536a88de11b3885f12ee87ab236689316d
+2026-06-26T16:47:12.955Z [INFO]: Note: switching to '2bae6b536a88de11b3885f12ee87ab236689316d'.
+                                 You are in 'detached HEAD' state. You can look around, make experimental
+                                 changes and commit them, and you can discard any commits you make in this
+                                 state without impacting any branches by switching back to a branch.
+                                 If you want to create a new branch to retain commits you create, you may
+                                 do so (now or later) by using -c with the switch command. Example:
+                                 git switch -c <new-branch-name>
+                                 Or undo this operation with:
+                                 git switch -
+                                 Turn off this advice by setting config variable advice.detachedHead to false
+                                 HEAD is now at 2bae6b5 feat: migrate EduFlow backend to AWS serverless and decouple frontend from NextAuth
+2026-06-26T16:47:13.033Z [INFO]: Successfully cleaned up Git credentials
+2026-06-26T16:47:13.034Z [INFO]: # Checking for Git submodules at: /codebuild/output/src4273134743/src/Eduflow-LMS/.gitmodules
+2026-06-26T16:47:13.042Z [INFO]: # Retrieving environment cache...
+2026-06-26T16:47:13.091Z [WARNING]: ! Unable to write cache: {"code":"ERR_BAD_REQUEST","message":"Request failed with status code 404"})}
+2026-06-26T16:47:13.091Z [INFO]: ---- Setting Up SSM Secrets ----
+2026-06-26T16:47:13.092Z [INFO]: SSM params {"Path":"/amplify/d4gl27knqvyrm/aws-phase2-cognito/","WithDecryption":true}
+2026-06-26T16:47:13.150Z [WARNING]: !Failed to set up process.env.secrets
+2026-06-26T16:47:13.866Z [INFO]: # No package override configuration found.
+2026-06-26T16:47:13.870Z [INFO]: # Retrieving cache...
+2026-06-26T16:47:24.273Z [INFO]: # Extracting cache...
+2026-06-26T16:47:34.136Z [INFO]: # Extraction completed
+2026-06-26T16:47:34.294Z [INFO]: # Retrieved cache
+2026-06-26T16:47:36.310Z [INFO]: BackendEnvironment name aws-phase2-cognito for app d4gl27knqvyrm is invalid
+2026-06-26T16:47:36.380Z [INFO]: Random environment name fanya generated
+2026-06-26T16:47:38.788Z [INFO]: ## Starting Backend Build
+                                 ## Checking for associated backend environment...
+                                 ## No backend environment association found, continuing...
+                                 ## Completed Backend Build
+2026-06-26T16:47:38.797Z [INFO]: ## Starting Frontend Build
+                                 # Starting phase: preBuild
+2026-06-26T16:47:38.797Z [INFO]: # Executing command: npm ci
+2026-06-26T16:48:11.171Z [INFO]: added 537 packages, and audited 538 packages in 28s
+2026-06-26T16:48:11.176Z [INFO]: 163 packages are looking for funding
+                                 run `npm fund` for details
+2026-06-26T16:48:11.206Z [INFO]: 2 moderate severity vulnerabilities
+                                 To address all issues (including breaking changes), run:
+                                 npm audit fix --force
+                                 Run `npm audit` for details.
+2026-06-26T16:48:11.229Z [INFO]: # Executing command: env | grep -e AUTH_SECRET -e AUTH_URL -e AUTH_TRUST_HOST -e COGNITO_ -e DYNAMODB_ -e S3_ -e NEXT_PUBLIC_APP_URL -e AWS_REGION >> .env.production
+2026-06-26T16:48:11.231Z [INFO]: # Completed phase: preBuild
+                                 # Starting phase: build
+                                 # Executing command: npm run build
+2026-06-26T16:48:11.333Z [INFO]: > eduflow-lms@0.1.0 build
+                                 > next build
+2026-06-26T16:48:11.795Z [INFO]: ▲ Next.js 16.2.9 (Turbopack)
+2026-06-26T16:48:11.796Z [INFO]: - Environments: .env.production
+2026-06-26T16:48:11.883Z [INFO]: Creating an optimized production build ...
+2026-06-26T16:48:23.290Z [WARNING]: 
+2026-06-26T16:48:23.296Z [WARNING]: > Build error occurred
+                                    Error: Turbopack build failed with 16 errors:
+                                    ./app/api/assignments/submit/route.ts:3:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m1 |[0m [36mimport[0m { [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem } [36mfrom[0m [32m"../../../../lib/aws/dynamo"[0m;
+                                    [31m[1m>[0m [90m3 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m4 |[0m [36mimport[0m { uploadToS3, getPresignedUrl } [36mfrom[0m [32m"../../../../lib/aws/s3"[0m;
+                                    [90m5 |[0m
+                                    [90m6 |[0m [36mexport[0m [36masync[0m [36mfunction[0m [33mPOST[0m(req: [33mRequest[0m) {
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/auth/[...nextauth]/route.ts:1:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [31m[1m>[0m [90m1 |[0m [36mimport[0m { handlers } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m2 |[0m
+                                    [90m3 |[0m [36mexport[0m [36mconst[0m { [33mGET[0m, [33mPOST[0m } = handlers;
+                                    [90m4 |[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/courses/[id]/route.ts:5:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m3 |[0m [36mimport[0m { getPresignedUrl } [36mfrom[0m [32m"../../../../lib/aws/s3"[0m;
+                                    [90m4 |[0m [36mimport[0m { courseSchema } [36mfrom[0m [32m"../../../../app/lib/schemas"[0m;
+                                    [31m[1m>[0m [90m5 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m6 |[0m [36mimport[0m { hasRole } [36mfrom[0m [32m"../../../../lib/rbac"[0m;
+                                    [90m7 |[0m
+                                    [90m8 |[0m [90m// PATCH /api/courses/:id — Update a course[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/courses/upload/route.ts:2:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m1 |[0m [36mimport[0m { [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+                                    [31m[1m>[0m [90m2 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m3 |[0m [36mimport[0m { uploadToS3, getPresignedUrl } [36mfrom[0m [32m"../../../../lib/aws/s3"[0m;
+                                    [90m4 |[0m [36mimport[0m { hasRole } [36mfrom[0m [32m"../../../../lib/rbac"[0m;
+                                    [90m5 |[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/enrollments/[id]/route.ts:4:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m2 |[0m [36mimport[0m { putItem, deleteItem, scanItems } [36mfrom[0m [32m"../../../../lib/aws/dynamo"[0m;
+                                    [90m3 |[0m [36mimport[0m { enrollmentSchema } [36mfrom[0m [32m"../../../../app/lib/schemas"[0m;
+                                    [31m[1m>[0m [90m4 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m5 |[0m [36mimport[0m { hasRole, [33mROUTE_PERMISSIONS[0m } [36mfrom[0m [32m"../../../../lib/rbac"[0m;
+                                    [90m6 |[0m
+                                    [90m7 |[0m [90m// PATCH /api/enrollments/:id — Update an enrollment[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/profile/upload/route.ts:3:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m1 |[0m [36mimport[0m { [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem } [36mfrom[0m [32m"../../../../lib/aws/dynamo"[0m;
+                                    [31m[1m>[0m [90m3 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m4 |[0m [36mimport[0m { uploadToS3, getPresignedUrl } [36mfrom[0m [32m"../../../../lib/aws/s3"[0m;
+                                    [90m5 |[0m
+                                    [90m6 |[0m [36mexport[0m [36masync[0m [36mfunction[0m [33mPOST[0m(req: [33mRequest[0m) {
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/quizzes/[id]/route.ts:4:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem, scanItems, deleteItem } [36mfrom[0m [32m"../../../../lib/aws/dynamo"[0m;
+                                    [90m3 |[0m [36mimport[0m { quizSchema } [36mfrom[0m [32m"../../../../app/lib/schemas"[0m;
+                                    [31m[1m>[0m [90m4 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m5 |[0m
+                                    [90m6 |[0m [36mexport[0m [36masync[0m [36mfunction[0m [33mGET[0m(req: [33mRequest[0m, props: { params: [33mPromise[0m<{ id: string }> }) {
+                                    [90m7 |[0m   [36mtry[0m {
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/quizzes/attempt/route.ts:3:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m1 |[0m [36mimport[0m { [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem } [36mfrom[0m [32m"../../../../lib/aws/dynamo"[0m;
+                                    [31m[1m>[0m [90m3 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m4 |[0m [36mimport[0m { quizAttemptSchema } [36mfrom[0m [32m"../../../lib/schemas"[0m;
+                                    [90m5 |[0m
+                                    [90m6 |[0m [36mexport[0m [36masync[0m [36mfunction[0m [33mPOST[0m(req: [33mRequest[0m) {
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/students/[id]/route.ts:4:1
+                                    Module not found: Can't resolve '../../../../auth'
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem, queryItems, deleteItem } [36mfrom[0m [32m"../../../../lib/aws/dynamo"[0m;
+                                    [90m3 |[0m [36mimport[0m { studentSchema } [36mfrom[0m [32m"../../../../app/lib/schemas"[0m;
+                                    [31m[1m>[0m [90m4 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m5 |[0m [36mimport[0m { hasRole, [33mROUTE_PERMISSIONS[0m } [36mfrom[0m [32m"../../../../lib/rbac"[0m;
+                                    [90m6 |[0m
+                                    [90m7 |[0m [90m// PATCH /api/students/:id — Update a student[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/activities/route.ts:3:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m1 |[0m [36mimport[0m { [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+                                    [90m2 |[0m [36mimport[0m { putItem, queryItems } [36mfrom[0m [32m"../../../lib/aws/dynamo"[0m;
+                                    [31m[1m>[0m [90m3 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m4 |[0m [36mimport[0m { z } [36mfrom[0m [32m"zod"[0m;
+                                    [90m5 |[0m
+                                    [90m6 |[0m [36mconst[0m activitySchema = z.object({
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/assignments/route.ts:5:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m3 |[0m [36mimport[0m { getPresignedUrl } [36mfrom[0m [32m"../../../lib/aws/s3"[0m;
+                                    [90m4 |[0m [36mimport[0m { v4 [36mas[0m uuidv4 } [36mfrom[0m [32m"uuid"[0m;
+                                    [31m[1m>[0m [90m5 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m6 |[0m [36mimport[0m { assignmentSchema } [36mfrom[0m [32m"../../../app/lib/schemas"[0m;
+                                    [90m7 |[0m
+                                    [90m8 |[0m [36mexport[0m [36masync[0m [36mfunction[0m [33mGET[0m(req: [33mRequest[0m) {
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/courses/route.ts:5:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m3 |[0m [36mimport[0m { getPresignedUrl } [36mfrom[0m [32m"../../../lib/aws/s3"[0m;
+                                    [90m4 |[0m [36mimport[0m { v4 [36mas[0m uuidv4 } [36mfrom[0m [32m"uuid"[0m;
+                                    [31m[1m>[0m [90m5 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m6 |[0m [36mimport[0m { hasRole } [36mfrom[0m [32m"../../../lib/rbac"[0m;
+                                    [90m7 |[0m [36mimport[0m { courseSchema } [36mfrom[0m [32m"../../lib/schemas"[0m;
+                                    [90m8 |[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/enrollments/route.ts:4:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m2 |[0m [36mimport[0m { scanItems, scanByPKPrefix, putItem, getItem } [36mfrom[0m [32m"../../../lib/aws/dynamo"[0m;
+                                    [90m3 |[0m [36mimport[0m { v4 [36mas[0m uuidv4 } [36mfrom[0m [32m"uuid"[0m;
+                                    [31m[1m>[0m [90m4 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m5 |[0m [36mimport[0m { hasRole, [33mROUTE_PERMISSIONS[0m } [36mfrom[0m [32m"../../../lib/rbac"[0m;
+                                    [90m6 |[0m [36mimport[0m { enrollmentSchema } [36mfrom[0m [32m"../../lib/schemas"[0m;
+                                    [90m7 |[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/profile/route.ts:4:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem } [36mfrom[0m [32m"../../../lib/aws/dynamo"[0m;
+                                    [90m3 |[0m [36mimport[0m { getPresignedUrl } [36mfrom[0m [32m"../../../lib/aws/s3"[0m;
+                                    [31m[1m>[0m [90m4 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m5 |[0m [36mimport[0m { profileUpdateSchema, changePasswordSchema } [36mfrom[0m [32m"../../lib/schemas"[0m;
+                                    [90m6 |[0m
+                                    [90m7 |[0m [36mexport[0m [36mconst[0m dynamic = [32m"force-dynamic"[0m;
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/quizzes/route.ts:4:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m2 |[0m [36mimport[0m { getItem, putItem, queryItems, scanByPKPrefix, scanItems } [36mfrom[0m [32m"../../../lib/aws/d...[0m
+                                    [90m3 |[0m [36mimport[0m { v4 [36mas[0m uuidv4 } [36mfrom[0m [32m"uuid"[0m;
+                                    [31m[1m>[0m [90m4 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m5 |[0m [36mimport[0m { quizSchema } [36mfrom[0m [32m"../../../app/lib/schemas"[0m;
+                                    [90m6 |[0m
+                                    [90m7 |[0m [36mexport[0m [36masync[0m [36mfunction[0m [33mGET[0m(req: [33mRequest[0m) {
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    ./app/api/students/route.ts:5:1
+                                    Module not found: Can't resolve '../../../auth'
+                                    [90m3 |[0m [36mimport[0m { cognitoSignUp } [36mfrom[0m [32m"../../../lib/aws/cognito"[0m;
+                                    [90m4 |[0m [36mimport[0m { v4 [36mas[0m uuidv4 } [36mfrom[0m [32m"uuid"[0m;
+                                    [31m[1m>[0m [90m5 |[0m [36mimport[0m { auth } [36mfrom[0m [32m"../../../auth"[0m;
+                                    [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+                                    [90m6 |[0m [36mimport[0m { hasRole, [33mROUTE_PERMISSIONS[0m } [36mfrom[0m [32m"../../../lib/rbac"[0m;
+                                    [90m7 |[0m [36mimport[0m { studentSchema } [36mfrom[0m [32m"../../lib/schemas"[0m;
+                                    [90m8 |[0m
+                                    https://nextjs.org/docs/messages/module-not-found
+                                    at <unknown> (./app/api/assignments/submit/route.ts:3:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/auth/[...nextauth]/route.ts:1:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/courses/[id]/route.ts:5:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/courses/upload/route.ts:2:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/enrollments/[id]/route.ts:4:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/profile/upload/route.ts:3:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/quizzes/[id]/route.ts:4:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/quizzes/attempt/route.ts:3:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/students/[id]/route.ts:4:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/activities/route.ts:3:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/assignments/route.ts:5:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/courses/route.ts:5:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/enrollments/route.ts:4:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/profile/route.ts:4:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/quizzes/route.ts:4:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+                                    at <unknown> (./app/api/students/route.ts:5:1)
+                                    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+2026-06-26T16:48:23.460Z [ERROR]: !!! Build failed
+2026-06-26T16:48:23.460Z [INFO]: Please read more about Amplify Hosting's support for SSR frameworks to find if your build failure is related to an unsupported feature: https://docs.aws.amazon.com/amplify/latest/userguide/amplify-ssr-framework-support.html. You may also find this troubleshooting guide useful: https://docs.aws.amazon.com/amplify/latest/userguide/troubleshooting-ssr-deployment.html
+2026-06-26T16:48:23.460Z [ERROR]: !!! Error: Command failed with exit code 1
+2026-06-26T16:48:23.460Z [INFO]: # Starting environment caching...
+2026-06-26T16:48:23.460Z [INFO]: # Environment caching completed
+

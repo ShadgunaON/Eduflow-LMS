@@ -12,7 +12,7 @@ export function DashboardCard({ children, className, noPadding = false, ...props
     <div
       className={cn(
         "bg-surface dark:bg-surface border border-surface-border rounded-2xl shadow-card dark:shadow-card-dark transition-all duration-300",
-        !noPadding && "p-6 sm:p-8",
+        !noPadding && "p-4 sm:p-5",
         className
       )}
       {...props}

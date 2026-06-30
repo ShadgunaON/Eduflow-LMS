@@ -27,18 +27,23 @@ export default function PopularCoursesWidget({ courses, enrollments }: { courses
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {popularity.map((course, idx) => (
           <div key={course.id} className="group flex flex-col bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-300 cursor-pointer">
-            <div className={`h-24 w-full bg-gradient-to-br ${
-              idx % 4 === 0 ? "from-indigo-500 to-purple-600" :
-              idx % 4 === 1 ? "from-emerald-400 to-teal-500" :
-              idx % 4 === 2 ? "from-amber-400 to-orange-500" :
-              "from-rose-400 to-red-500"
-            } relative`}>
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
-              <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end">
+            <div className={`h-24 w-full relative overflow-hidden bg-gradient-to-br ${
+              !course.imageUrl ? (
+                idx % 4 === 0 ? "from-indigo-500 to-purple-600" :
+                idx % 4 === 1 ? "from-emerald-400 to-teal-500" :
+                idx % 4 === 2 ? "from-amber-400 to-orange-500" :
+                "from-rose-400 to-red-500"
+              ) : "bg-slate-200"
+            }`}>
+              {course.imageUrl && (
+                <Image src={course.imageUrl} alt={course.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
+              )}
+              <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors z-10" />
+              <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end z-20">
                 <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur text-xs font-bold px-2 py-1 rounded-md text-slate-800 dark:text-slate-100">
                   {course.category}
                 </span>
-                <span className="text-white font-semibold text-sm drop-shadow-md">₹{course.fee}</span>
+                <span className="text-white font-semibold text-sm drop-shadow-md shadow-black">₹{course.fee}</span>
               </div>
             </div>
             

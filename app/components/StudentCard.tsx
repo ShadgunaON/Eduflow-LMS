@@ -38,7 +38,7 @@ export default function StudentCard({ id, name, email, course, onEdit, onDelete 
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-surface border border-surface-border p-4 sm:p-6 rounded-2xl flex flex-col shadow-card hover:shadow-card-dark hover:-translate-y-1 transition-all duration-300 group"
+      className="bg-surface border border-surface-border p-3 sm:p-5 rounded-2xl flex flex-col shadow-card hover:shadow-card-dark hover:-translate-y-1 transition-all duration-300 group"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ export default function StudentCard({ id, name, email, course, onEdit, onDelete 
         <StatusBadge status={status} />
       </div>
 
-      <div className="bg-surface-muted rounded-xl p-4 flex-1 mb-5 border border-surface-border/50">
+      <div className="bg-surface-muted rounded-xl p-3 flex-1 mb-4 border border-surface-border/50">
         <div className="flex items-center gap-2 text-sm font-bold text-foreground mb-2">
           <BookOpen size={16} className="text-primary" />
           <span className="truncate">{course}</span>

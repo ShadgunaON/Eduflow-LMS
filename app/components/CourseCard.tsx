@@ -27,9 +27,9 @@ export default function CourseCard({ id, name, duration, fee, category, imageUrl
       className="bg-surface border border-surface-border rounded-xl overflow-hidden shadow-card hover:shadow-card-dark hover:-translate-y-1 transition-all duration-300 group flex flex-col h-full"
     >
       {/* Thumbnail Header */}
-      <div className={`h-32 sm:h-40 w-full relative flex items-center justify-center overflow-hidden bg-surface-muted`}>
+      <div className={`aspect-video w-full relative flex items-center justify-center overflow-hidden bg-surface-muted`}>
         {imageUrl ? (
-          <Image src={imageUrl} alt={name} fill className="object-cover group-hover:scale-110 transition-transform duration-700 mix-blend-multiply opacity-90" />
+          <Image src={imageUrl} alt={name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" />
         ) : (
           <div className="absolute inset-0 bg-primary/10 mix-blend-overlay group-hover:scale-110 transition-transform duration-700" />
         )}
@@ -42,7 +42,7 @@ export default function CourseCard({ id, name, duration, fee, category, imageUrl
       </div>
 
       {/* Content */}
-      <div className="p-5 sm:p-6 flex-1 flex flex-col">
+      <div className="p-4 sm:p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-2">
           <h2 className="text-lg font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
             {name}

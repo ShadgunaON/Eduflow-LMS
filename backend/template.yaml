@@ -67,6 +67,18 @@ Resources:
             RestApiId: !Ref EduFlowApi
             Path: /courses
             Method: post
+        UpdateCourse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /courses/{id}
+            Method: patch
+        DeleteCourse:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EduFlowApi
+            Path: /courses/{id}
+            Method: delete
 
   GetStudentsFunction:
     Type: AWS::Serverless::Function

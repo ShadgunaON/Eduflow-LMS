@@ -37,10 +37,10 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to AWS S3
     const imageUrl = await uploadToS3(buffer, file.name, file.type, "eduflow-courses");
+    const previewUrl = await getPresignedUrl(imageUrl);
 
-    return NextResponse.json({ imageUrl: await getPresignedUrl(imageUrl) }, { status: 200 });
+    return NextResponse.json({ imageUrl, previewUrl }, { status: 200 });
   } catch (error: any) {
     console.error("Course Thumbnail Upload Error:", error);
     const message = error.message || (typeof error === "string" ? error : JSON.stringify(error));

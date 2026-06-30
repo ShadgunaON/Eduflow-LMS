@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { DashboardCard } from "../components/ui/DashboardCard";
 import { UserAvatar } from "../components/ui/UserAvatar";
-import { Save, User, Mail, Shield, Key } from "lucide-react";
+import { Save, User, Mail, Shield, Key, Camera, Loader2 } from "lucide-react";
 import { profileUpdateSchema, changePasswordSchema } from "../lib/schemas";
 import { z } from "zod";
 
 export default function ProfilePage() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, getToken } = useAuth();
   const { addToast } = useToast();
 
   const [name, setName] = useState(user?.name || "");
@@ -20,6 +20,54 @@ export default function ProfilePage() {
   
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      addToast("Image size must be less than 5MB", "error");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      addToast("Please upload an image file", "error");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    addToast("Uploading profile picture...", "info");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/profile/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        await updateUser({ image: data.image });
+        addToast("Profile picture updated", "success");
+      } else {
+        const errData = await res.json();
+        addToast(errData.error || "Failed to upload image", "error");
+      }
+    } catch (err) {
+      console.error("Profile upload fetch error:", err);
+      addToast("Error uploading profile picture", "error");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,8 +133,25 @@ export default function ProfilePage() {
         {/* Left Column - User Info summary */}
         <div className="space-y-6">
           <DashboardCard className="p-8 flex flex-col items-center text-center bg-surface border border-surface-border shadow-card">
-            <div className="relative mb-6">
-              <UserAvatar name={user.name} src={user.image} size="lg" className="w-32 h-32 text-4xl shadow-xl ring-4 ring-primary/10" />
+            <div 
+              className="relative mb-6 cursor-pointer group rounded-full overflow-hidden"
+              onClick={() => !isUploadingImage && fileInputRef.current?.click()}
+            >
+              <UserAvatar name={user.name} src={user.image} size="lg" className="w-32 h-32 text-4xl shadow-xl ring-4 ring-primary/10 group-hover:opacity-75 transition-opacity" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {isUploadingImage ? (
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-8 h-8 text-white" />
+                )}
+              </div>
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                onChange={handleImageChange}
+                accept="image/*"
+                className="hidden"
+              />
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-1">{user.name}</h2>
             <p className="text-slate-500 font-medium text-sm mb-4">{user.email}</p>
